@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>RC Training Slots</title>
+  <style>
+    :root{
+      --bg: #1b1b1b;
+      --fg: #ffffff;
+      --muted: rgba(255,255,255,.75);
+      --card: rgba(0,0,0,.18);
+      --btn: rgba(255,255,255,.14);
+      --btn2: rgba(255,255,255,.22);
+      --outline: rgba(255,255,255,.22);
+      --black: #000000;
+      --white: #ffffff;
+    }
+
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body{
+      background: var(--bg);
+      color: var(--fg);
+      overflow:hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+
+    .wrap{
+      height:100%;
+      padding: 14px;
+      padding-top: calc(14px + env(safe-area-inset-top));
+      padding-bottom: calc(14px + env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .topbar{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .title{
+      font-weight:700;
+      letter-spacing:.2px;
+      font-size: 16px;
+      opacity:.95;
+    }
+
+    .panel{
+      background: var(--card);
+      border: 1px solid var(--outline);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .grid{
+      display:grid;
+      gap: 10px;
+    }
+
+    .grid.cols2{ grid-template-columns: 1fr 1fr; }
+    .grid.cols3{ grid-template-columns: 1fr 1fr 1fr; }
+
+    .chip{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 8px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 12px 12px;
+      min-height: 50px;
+    }
+    .chip label{ display:flex; align-items:center; gap:10px; width:100%; cursor:pointer; }
+    .chip input{ transform: scale(1.25); }
+
+    .dot{
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1px solid rgba(0,0,0,.25);
+      flex: 0 0 auto;
+    }
+
+    .btnrow{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    button{
+      font: inherit;
+      border: 1px solid rgba(255,255,255,.18);
+      background: var(--btn);
+      color: var(--fg);
+      border-radius: 16px;
+      padding: 14px 12px;
+      font-weight: 700;
+      cursor:pointer;
+      min-height: 54px;
+    }
+    button:active{ transform: translateY(1px); }
+    button.primary{ background: var(--btn2); border-color: rgba(255,255,255,.28); }
+    button.danger{ background: rgba(255,60,60,.22); border-color: rgba(255,60,60,.35); }
+    button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+
+    .stage{
+      flex: 1 1 auto;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      border-radius: 22px;
+      border: 1px solid rgba(0,0,0,.25);
+      background: rgba(0,0,0,.15);
+      padding: 18px;
+      text-align:center;
+      gap: 10px;
+      position: relative;
+      overflow:hidden;
+    }
+
+    .mode{
+      font-size: clamp(34px, 7vw, 56px);
+      font-weight: 900;
+      letter-spacing: .6px;
+      line-height: 1.05;
+    }
+
+    .time{
+      font-size: clamp(46px, 9vw, 72px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    .next{
+      font-size: clamp(14px, 2.7vw, 18px);
+      font-weight: 800;
+      opacity: .92;
+      letter-spacing: .3px;
+    }
+
+    .sub{
+      font-size: 13px;
+      opacity: .85;
+      line-height: 1.35;
+    }
+
+    .blink{
+      animation: blink 0.85s step-end infinite;
+      color: var(--black) !important;
+      text-shadow: none !important;
+    }
+    @keyframes blink{
+      50%{ opacity: .15; }
+    }
+
+    .badge{
+      position:absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(0,0,0,.18);
+      color: rgba(255,255,255,.9);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: .3px;
+    }
+
+    .hint{
+      font-size: 12px;
+      opacity: .8;
+    }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items:center;
+    }
+
+    .small{
+      font-size: 12px;
+      opacity:.78;
+    }
+
+    .toast{
+      margin-top: 6px;
+      font-size: 12px;
+      opacity: .9;
+      min-height: 16px;
+    }
+
+    /* Mode backgrounds (your spec) */
+    .bg-fwd{ background: #1e5aa8; }      /* blue */
+    .bg-touring{ background: #f08a1a; }  /* orange */
+    .bg-mod{ background: #c62828; }      /* red */
+    .bg-beginner{ background: #ffffff; } /* white */
+    .bg-beginner .mode,
+    .bg-beginner .time,
+    .bg-beginner .next,
+    .bg-beginner .sub,
+    .bg-beginner .badge{ color: #111; }
+    .bg-beginner .badge{
+      background: rgba(0,0,0,.08);
+      border-color: rgba(0,0,0,.10);
+      color: rgba(0,0,0,.8);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">RC Training Slots</div>
+      <div class="small" id="status">Ready</div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <div class="small"><b>Modes</b> (rotation: FWD → Touring → Mod → Beginner)</div>
+        <div class="small">Interval: <b id="intervalLabel">10 min</b></div>
+      </div>
+
+      <div class="grid cols2" style="margin-top:10px;">
+        <div class="chip">
+          <label>
+            <input type="checkbox" id="mFWD" checked>
+            <span class="dot" style="background:#1e5aa8"></span>
+            <span><b>FWD</b></span>
+          </label>
+        </div>
+        <div class="chip">
+          <label>
+            <input type="checkbox" id="mTouring" checked>
+            <span class="dot" style="background:#f08a1a"></span>
+            <span><b>Touring</b></span>
+          </label>
+        </div>
+        <div class="chip">
+          <label>
+            <input type="checkbox" id="mMod" checked>
+            <span class="dot" style="background:#c62828"></span>
+            <span><b>Mod</b></span>
+          </label>
+        </div>
+        <div class="chip">
+          <label>
+            <input type="checkbox" id="mBeginner" checked>
+            <span class="dot" style="background:#ffffff"></span>
+            <span><b>Beginner</b></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="btnrow" style="margin-top:10px;">
+        <button id="b5">5 min</button>
+        <button id="b10" class="primary">10 min</button>
+        <button id="b15">15 min</button>
+      </div>
+
+      <div class="btnrow" style="margin-top:10px; grid-template-columns: 1fr 1fr;">
+        <button id="start" class="primary">Start</button>
+        <button id="stop" class="danger" disabled>Stop</button>
+      </div>
+
+      <div class="toast" id="toast"></div>
+      <div class="hint">Tips: På mobil kräver TTS ofta att du trycker Start (användargest). Denna app pratar engelska.</div>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="badge" id="badge">IDLE</div>
+      <div class="mode" id="mode">Select modes</div>
+      <div class="time" id="time">--:--</div>
+      <div class="next" id="next">NEXT UP: --</div>
+      <div class="sub" id="sub">Start to begin rotation</div>
+    </div>
+  </div>
+
+  <script>
+    // --- Config ---
+    const MODE_ORDER = [
+      { key: "FWD",      cls: "bg-fwd" },
+      { key: "Touring",  cls: "bg-touring" },
+      { key: "Mod",      cls: "bg-mod" },
+      { key: "Beginner", cls: "bg-beginner" },
+    ];
+
+    // --- Elements ---
+    const el = (id) => document.getElementById(id);
+
+    const stage = el("stage");
+    const badge = el("badge");
+    const statusEl = el("status");
+    const toastEl = el("toast");
+
+    const modeEl = el("mode");
+    const timeEl = el("time");
+    const nextEl = el("next");
+    const subEl = el("sub");
+
+    const mFWD = el("mFWD");
+    const mTouring = el("mTouring");
+    const mMod = el("mMod");
+    const mBeginner = el("mBeginner");
+
+    const b5 = el("b5");
+    const b10 = el("b10");
+    const b15 = el("b15");
+    const intervalLabel = el("intervalLabel");
+
+    const startBtn = el("start");
+    const stopBtn  = el("stop");
+
+    // --- State ---
+    let intervalMin = 10;
+    let running = false;
+    let rotation = [];     // filtered MODE_ORDER entries
+    let idx = 0;
+
+    let slotDurationMs = intervalMin * 60 * 1000;
+    let slotEndsAt = 0;
+    let tickTimer = null;
+    let warnedAtOneMinute = false;
+
+    // --- Utilities ---
+    function setToast(msg){
+      toastEl.textContent = msg || "";
+    }
+
+    function fmtMMSS(ms){
+      const total = Math.max(0, Math.ceil(ms / 1000));
+      const m = Math.floor(total / 60);
+      const s = total % 60;
+      return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+    }
+
+    function buildRotation(){
+      const selected = new Set();
+      if (mFWD.checked) selected.add("FWD");
+      if (mTouring.checked) selected.add("Touring");
+      if (mMod.checked) selected.add("Mod");
+      if (mBeginner.checked) selected.add("Beginner");
+
+      rotation = MODE_ORDER.filter(m => selected.has(m.key));
+      return rotation;
+    }
+
+    function applyStageBg(cls){
+      // remove all bg classes then add current
+      for (const m of MODE_ORDER) stage.classList.remove(m.cls);
+      if (cls) stage.classList.add(cls);
+    }
+
+    function getNextModeKey(){
+      if (rotation.length === 0) return "--";
+      if (rotation.length === 1) return rotation[0].key;
+      return rotation[(idx + 1) % rotation.length].key;
+    }
+
+    function setBlink(on){
+      if (on){
+        modeEl.classList.add("blink");
+        timeEl.classList.add("blink");
+        nextEl.classList.add("blink");
+      } else {
+        modeEl.classList.remove("blink");
+        timeEl.classList.remove("blink");
+        nextEl.classList.remove("blink");
+      }
+    }
+
+    // --- TTS (English) ---
+    function pickEnglishVoice(){
+      const voices = speechSynthesis.getVoices?.() || [];
+      // Prefer en-US/en-GB if available; otherwise any English
+      const preferred = voices.find(v => /en-US/i.test(v.lang)) ||
+                        voices.find(v => /en-GB/i.test(v.lang)) ||
+                        voices.find(v => /^en/i.test(v.lang));
+      return preferred || null;
+    }
+
+    function speak(text){
+      try{
+        if (!("speechSynthesis" in window)) return;
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "en-US";
+        const v = pickEnglishVoice();
+        if (v) u.voice = v;
+        u.rate = 1.0;
+        u.pitch = 1.0;
+        u.volume = 1.0;
+        speechSynthesis.speak(u);
+      } catch(e){
+        // ignore
+      }
+    }
+
+    // Some browsers load voices async
+    if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
+    }
+
+    // --- Interval selection UI ---
+    function setIntervalMinutes(min){
+      intervalMin = min;
+      slotDurationMs = intervalMin * 60 * 1000;
+      intervalLabel.textContent = `${intervalMin} min`;
+
+      b5.classList.toggle("primary", min === 5);
+      b10.classList.toggle("primary", min === 10);
+      b15.classList.toggle("primary", min === 15);
+
+      if (!running){
+        timeEl.textContent = fmtMMSS(slotDurationMs);
+      }
+      setToast(`Interval set to ${intervalMin} minutes.`);
+    }
+
+    b5.onclick  = () => setIntervalMinutes(5);
+    b10.onclick = () => setIntervalMinutes(10);
+    b15.onclick = () => setIntervalMinutes(15);
+
+    // --- Mode selection: keep UI honest ---
+    function refreshIdleView(){
+      const rot = buildRotation();
+      if (rot.length === 0){
+        badge.textContent = "IDLE";
+        modeEl.textContent = "Select modes";
+        timeEl.textContent = "--:--";
+        nextEl.textContent = "NEXT UP: --";
+        subEl.textContent = "Pick at least one mode.";
+        applyStageBg(null);
+        setBlink(false);
+        startBtn.disabled = true;
+        return;
+      }
+
+      startBtn.disabled = false;
+      const first = rot[0];
+      const nextKey = (rot.length === 1) ? first.key : rot[1].key;
+
+      badge.textContent = "IDLE";
+      modeEl.textContent = first.key;
+      timeEl.textContent = fmtMMSS(slotDurationMs);
+      nextEl.textContent = `NEXT UP: ${nextKey}`;
+      subEl.textContent = "Press Start to begin.";
+      applyStageBg(first.cls);
+      setBlink(false);
+    }
+
+    mFWD.onchange = mTouring.onchange = mMod.onchange = mBeginner.onchange = () => {
+      if (!running) refreshIdleView();
+    };
+
+    // --- Core run loop ---
+    function startSlot(){
+      const current = rotation[idx];
+      const nextKey = getNextModeKey();
+
+      warnedAtOneMinute = false;
+      setBlink(false);
+
+      applyStageBg(current.cls);
+      badge.textContent = "RUNNING";
+      statusEl.textContent = `Running: ${current.key}`;
+      modeEl.textContent = current.key;
+      nextEl.textContent = `NEXT UP: ${nextKey}`;
+      subEl.textContent = `${intervalMin} minutes slot`;
+
+      slotEndsAt = Date.now() + slotDurationMs;
+
+      // TTS start announcement
+      speak(`${current.key}, ${intervalMin} minutes`);
+
+      // Tick immediately
+      tick();
+      tickTimer = setInterval(tick, 200);
+    }
+
+    function tick(){
+      const now = Date.now();
+      const remaining = slotEndsAt - now;
+
+      timeEl.textContent = fmtMMSS(remaining);
+
+      // At 1 minute left: warn + blink black text
+      if (!warnedAtOneMinute && remaining <= 60 * 1000 && remaining > 0){
+        warnedAtOneMinute = true;
+        const nextKey = getNextModeKey();
+        speak(`One minute left to drive, ${nextKey} get ready`);
+        setBlink(true);
+      }
+
+      // End slot
+      if (remaining <= 0){
+        endSlot();
+      }
+    }
+
+    function endSlot(){
+      if (tickTimer){
+        clearInterval(tickTimer);
+        tickTimer = null;
+      }
+
+      const current = rotation[idx];
+      speak(`${current.key} training end`);
+
+      // Move to next
+      idx = (idx + 1) % rotation.length;
+
+      // Start next slot immediately
+      startSlot();
+    }
+
+    function start(){
+      const rot = buildRotation();
+      if (rot.length === 0){
+        setToast("Select at least one mode.");
+        return;
+      }
+
+      running = true;
+      rotation = rot;
+      idx = 0; // "first selected" in order
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      // Lock inputs while running (simple + robust)
+      mFWD.disabled = true;
+      mTouring.disabled = true;
+      mMod.disabled = true;
+      mBeginner.disabled = true;
+      b5.disabled = true;
+      b10.disabled = true;
+      b15.disabled = true;
+
+      setToast("Started.");
+      startSlot();
+    }
+
+    function stop(){
+      running = false;
+      if (tickTimer){
+        clearInterval(tickTimer);
+        tickTimer = null;
+      }
+
+      // stop any ongoing speech
+      try{ if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e){}
+
+      badge.textContent = "STOPPED";
+      statusEl.textContent = "Stopped";
+      setBlink(false);
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+
+      // Unlock inputs
+      mFWD.disabled = false;
+      mTouring.disabled = false;
+      mMod.disabled = false;
+      mBeginner.disabled = false;
+      b5.disabled = false;
+      b10.disabled = false;
+      b15.disabled = false;
+
+      setToast("Stopped.");
+      refreshIdleView();
+    }
+
+    startBtn.onclick = start;
+    stopBtn.onclick = stop;
+
+    // --- Init ---
+    setIntervalMinutes(10);
+    refreshIdleView();
+  </script>
+</body>
+</html>

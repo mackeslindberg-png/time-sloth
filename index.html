@@ -8,13 +8,11 @@
     :root{
       --bg: #1b1b1b;
       --fg: #ffffff;
-      --muted: rgba(255,255,255,.75);
       --card: rgba(0,0,0,.18);
       --btn: rgba(255,255,255,.14);
       --btn2: rgba(255,255,255,.22);
       --outline: rgba(255,255,255,.22);
       --black: #000000;
-      --white: #ffffff;
     }
 
     *{ box-sizing: border-box; }
@@ -45,10 +43,19 @@
     }
 
     .title{
+      display:flex;
+      align-items:center;
+      gap: 10px;
       font-weight:700;
       letter-spacing:.2px;
       font-size: 16px;
       opacity:.95;
+    }
+
+    .logoTop{
+      height: 28px;
+      width: auto;
+      display:block;
     }
 
     .panel{
@@ -62,9 +69,7 @@
       display:grid;
       gap: 10px;
     }
-
     .grid.cols2{ grid-template-columns: 1fr 1fr; }
-    .grid.cols3{ grid-template-columns: 1fr 1fr 1fr; }
 
     .chip{
       display:flex;
@@ -122,6 +127,19 @@
       gap: 10px;
       position: relative;
       overflow:hidden;
+      isolation: isolate;
+    }
+
+    /* sharp logo in upper-left on run screen */
+    .stageLogo{
+      position:absolute;
+      top: 12px;
+      left: 12px;
+      height: 40px;      /* "lagom storlek" */
+      width: auto;
+      z-index: 5;
+      pointer-events:none;
+      filter: none;
     }
 
     .mode{
@@ -129,6 +147,7 @@
       font-weight: 900;
       letter-spacing: .6px;
       line-height: 1.05;
+      z-index: 2;
     }
 
     .time{
@@ -136,6 +155,7 @@
       font-weight: 900;
       letter-spacing: 1px;
       line-height: 1;
+      z-index: 2;
     }
 
     .next{
@@ -143,12 +163,14 @@
       font-weight: 800;
       opacity: .92;
       letter-spacing: .3px;
+      z-index: 2;
     }
 
     .sub{
       font-size: 13px;
       opacity: .85;
       line-height: 1.35;
+      z-index: 2;
     }
 
     .blink{
@@ -172,13 +194,10 @@
       font-weight: 800;
       font-size: 12px;
       letter-spacing: .3px;
+      z-index: 3;
     }
 
-    .hint{
-      font-size: 12px;
-      opacity: .8;
-    }
-
+    .hint{ font-size: 12px; opacity: .8; }
     .row{
       display:flex;
       gap: 10px;
@@ -186,24 +205,14 @@
       justify-content: space-between;
       align-items:center;
     }
-
-    .small{
-      font-size: 12px;
-      opacity:.78;
-    }
-
-    .toast{
-      margin-top: 6px;
-      font-size: 12px;
-      opacity: .9;
-      min-height: 16px;
-    }
+    .small{ font-size: 12px; opacity:.78; }
+    .toast{ margin-top: 6px; font-size: 12px; opacity: .9; min-height: 16px; }
 
     /* Mode backgrounds (your spec) */
-    .bg-fwd{ background: #1e5aa8; }      /* blue */
-    .bg-touring{ background: #f08a1a; }  /* orange */
-    .bg-mod{ background: #c62828; }      /* red */
-    .bg-beginner{ background: #ffffff; } /* white */
+    .bg-fwd{ background: #1e5aa8; }
+    .bg-touring{ background: #f08a1a; }
+    .bg-mod{ background: #c62828; }
+    .bg-beginner{ background: #ffffff; }
     .bg-beginner .mode,
     .bg-beginner .time,
     .bg-beginner .next,
@@ -214,13 +223,65 @@
       border-color: rgba(0,0,0,.10);
       color: rgba(0,0,0,.8);
     }
+
+    /* Splash screen */
+    .splash{
+      position:fixed;
+      inset:0;
+      background: #0f0f0f;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap: 14px;
+      z-index: 999;
+      opacity: 1;
+      transition: opacity 420ms ease;
+      padding: 18px;
+      text-align:center;
+    }
+    .splash.hide{ opacity:0; pointer-events:none; }
+    .splashLogo{
+      width: min(260px, 70vw);
+      height: auto;
+      display:block;
+    }
+    .splashText{
+      font-weight: 900;
+      letter-spacing: .6px;
+      font-size: 22px;
+      opacity: .95;
+    }
+    .splashSub{
+      font-size: 13px;
+      opacity: .78;
+      max-width: 46ch;
+      line-height: 1.35;
+    }
+    .splashBtn{
+      margin-top: 8px;
+      width: min(360px, 92vw);
+    }
   </style>
 </head>
 
 <body>
+  <!-- Splash on startup -->
+  <div class="splash" id="splash">
+    <img src="logo.png" class="splashLogo" alt="time/sloth logo">
+    <div class="splashText">time/sloth</div>
+    <div class="splashSub">
+      Tap to enter. (This also enables voice on mobile browsers.)
+    </div>
+    <button class="splashBtn primary" id="enterBtn">Enter</button>
+  </div>
+
   <div class="wrap">
     <div class="topbar">
-      <div class="title">RC Training Slots</div>
+      <div class="title">
+        <img src="logo.png" alt="time/sloth logo" class="logoTop">
+        <span>time/sloth</span>
+      </div>
       <div class="small" id="status">Ready</div>
     </div>
 
@@ -273,10 +334,12 @@
       </div>
 
       <div class="toast" id="toast"></div>
-      <div class="hint">Tips: På mobil kräver TTS ofta att du trycker Start (användargest). Denna app pratar engelska.</div>
+      <div class="hint">Wake lock funkar bäst i Chrome på Android. Sidan måste vara aktiv.</div>
     </div>
 
     <div class="stage" id="stage">
+      <!-- sharp logo on run screen -->
+      <img src="logo.png" class="stageLogo" alt="time/sloth logo">
       <div class="badge" id="badge">IDLE</div>
       <div class="mode" id="mode">Select modes</div>
       <div class="time" id="time">--:--</div>
@@ -296,6 +359,9 @@
 
     // --- Elements ---
     const el = (id) => document.getElementById(id);
+
+    const splash = el("splash");
+    const enterBtn = el("enterBtn");
 
     const stage = el("stage");
     const badge = el("badge");
@@ -323,13 +389,44 @@
     // --- State ---
     let intervalMin = 10;
     let running = false;
-    let rotation = [];     // filtered MODE_ORDER entries
+    let rotation = [];
     let idx = 0;
 
     let slotDurationMs = intervalMin * 60 * 1000;
     let slotEndsAt = 0;
     let tickTimer = null;
     let warnedAtOneMinute = false;
+
+    // --- Wake Lock (prevent screen sleep) ---
+    let wakeLock = null;
+
+    async function requestWakeLock(){
+      try{
+        if (!("wakeLock" in navigator)) {
+          setToast("Wake Lock not supported on this device/browser.");
+          return;
+        }
+        wakeLock = await navigator.wakeLock.request("screen");
+        setToast("Screen will stay awake.");
+      } catch (e){
+        setToast("Could not enable Wake Lock (try Chrome, keep the page active).");
+      }
+    }
+
+    async function releaseWakeLock(){
+      try{
+        if (wakeLock){
+          await wakeLock.release();
+          wakeLock = null;
+        }
+      } catch(e){}
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && running){
+        requestWakeLock();
+      }
+    });
 
     // --- Utilities ---
     function setToast(msg){
@@ -355,7 +452,6 @@
     }
 
     function applyStageBg(cls){
-      // remove all bg classes then add current
       for (const m of MODE_ORDER) stage.classList.remove(m.cls);
       if (cls) stage.classList.add(cls);
     }
@@ -381,7 +477,6 @@
     // --- TTS (English) ---
     function pickEnglishVoice(){
       const voices = speechSynthesis.getVoices?.() || [];
-      // Prefer en-US/en-GB if available; otherwise any English
       const preferred = voices.find(v => /en-US/i.test(v.lang)) ||
                         voices.find(v => /en-GB/i.test(v.lang)) ||
                         voices.find(v => /^en/i.test(v.lang));
@@ -400,12 +495,9 @@
         u.pitch = 1.0;
         u.volume = 1.0;
         speechSynthesis.speak(u);
-      } catch(e){
-        // ignore
-      }
+      } catch(e){}
     }
 
-    // Some browsers load voices async
     if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
@@ -430,7 +522,7 @@
     b10.onclick = () => setIntervalMinutes(10);
     b15.onclick = () => setIntervalMinutes(15);
 
-    // --- Mode selection: keep UI honest ---
+    // --- Mode selection (idle only) ---
     function refreshIdleView(){
       const rot = buildRotation();
       if (rot.length === 0){
@@ -479,21 +571,16 @@
 
       slotEndsAt = Date.now() + slotDurationMs;
 
-      // TTS start announcement
       speak(`${current.key}, ${intervalMin} minutes`);
 
-      // Tick immediately
       tick();
       tickTimer = setInterval(tick, 200);
     }
 
     function tick(){
-      const now = Date.now();
-      const remaining = slotEndsAt - now;
-
+      const remaining = slotEndsAt - Date.now();
       timeEl.textContent = fmtMMSS(remaining);
 
-      // At 1 minute left: warn + blink black text
       if (!warnedAtOneMinute && remaining <= 60 * 1000 && remaining > 0){
         warnedAtOneMinute = true;
         const nextKey = getNextModeKey();
@@ -501,7 +588,6 @@
         setBlink(true);
       }
 
-      // End slot
       if (remaining <= 0){
         endSlot();
       }
@@ -516,11 +602,18 @@
       const current = rotation[idx];
       speak(`${current.key} training end`);
 
-      // Move to next
       idx = (idx + 1) % rotation.length;
-
-      // Start next slot immediately
       startSlot();
+    }
+
+    function lockInputs(lock){
+      mFWD.disabled = lock;
+      mTouring.disabled = lock;
+      mMod.disabled = lock;
+      mBeginner.disabled = lock;
+      b5.disabled = lock;
+      b10.disabled = lock;
+      b15.disabled = lock;
     }
 
     function start(){
@@ -531,19 +624,14 @@
       }
 
       running = true;
+      requestWakeLock();
+
       rotation = rot;
-      idx = 0; // "first selected" in order
+      idx = 0;
+
       startBtn.disabled = true;
       stopBtn.disabled = false;
-
-      // Lock inputs while running (simple + robust)
-      mFWD.disabled = true;
-      mTouring.disabled = true;
-      mMod.disabled = true;
-      mBeginner.disabled = true;
-      b5.disabled = true;
-      b10.disabled = true;
-      b15.disabled = true;
+      lockInputs(true);
 
       setToast("Started.");
       startSlot();
@@ -551,12 +639,13 @@
 
     function stop(){
       running = false;
+      releaseWakeLock();
+
       if (tickTimer){
         clearInterval(tickTimer);
         tickTimer = null;
       }
 
-      // stop any ongoing speech
       try{ if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e){}
 
       badge.textContent = "STOPPED";
@@ -565,15 +654,7 @@
 
       startBtn.disabled = false;
       stopBtn.disabled = true;
-
-      // Unlock inputs
-      mFWD.disabled = false;
-      mTouring.disabled = false;
-      mMod.disabled = false;
-      mBeginner.disabled = false;
-      b5.disabled = false;
-      b10.disabled = false;
-      b15.disabled = false;
+      lockInputs(false);
 
       setToast("Stopped.");
       refreshIdleView();
@@ -582,6 +663,21 @@
     startBtn.onclick = start;
     stopBtn.onclick = stop;
 
+    // --- Splash handling ---
+    function hideSplash(){
+      splash.classList.add("hide");
+      // remove from tab order after fade
+      setTimeout(() => { splash.style.display = "none"; }, 450);
+    }
+
+    // On mobile, this "enter" click also helps unlock speech
+    enterBtn.onclick = () => {
+      // warm up TTS quietly (some browsers behave better after first utterance)
+      speak(" ");
+      hideSplash();
+    };
+
+    // If you want splash to always appear each load, keep as-is.
     // --- Init ---
     setIntervalMinutes(10);
     refreshIdleView();

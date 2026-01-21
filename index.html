@@ -126,11 +126,12 @@
       isolation: isolate;
     }
 
+    /* logo 3x larger */
     .stageLogo{
       position:absolute;
       top: 12px;
       left: 12px;
-      height: 40px;
+      height: 120px; /* was 40px */
       width: auto;
       z-index: 5;
       pointer-events:none;
@@ -152,11 +153,14 @@
       z-index: 2;
     }
 
+    /* NEXT UP moved down & italic */
     .next{
+      margin-top: clamp(12px, 4vh, 28px);
       font-size: clamp(16px, 3.2vw, 22px);
       font-weight: 900;
       opacity: .95;
       letter-spacing: .4px;
+      font-style: italic;
       z-index: 2;
     }
 
@@ -167,14 +171,10 @@
       z-index: 2;
     }
 
-    .blink{
-      animation: blink 0.85s step-end infinite;
-      color: var(--black) !important;
-      text-shadow: none !important;
-    }
-    @keyframes blink{
-      50%{ opacity: .15; }
-    }
+    /* Blink only mode + time (NOT next) */
+    .blinkMode{ animation: blink 0.85s step-end infinite; color: var(--black) !important; text-shadow:none !important; }
+    .blinkTime{ animation: blink 0.85s step-end infinite; color: var(--black) !important; text-shadow:none !important; }
+    @keyframes blink{ 50%{ opacity: .15; } }
 
     .badge{
       position:absolute;
@@ -217,7 +217,6 @@
       color: rgba(0,0,0,.8);
     }
 
-    /* Splash */
     .splash{
       position:fixed;
       inset:0;
@@ -239,7 +238,7 @@
     .splashSub{ font-size: 13px; opacity: .78; max-width: 46ch; line-height: 1.35; }
     .splashBtn{ margin-top: 8px; width: min(360px, 92vw); }
 
-    /* RUN VIEW (make the colored stage basically fullscreen) */
+    /* RUN VIEW fullscreen */
     body.run .panel{ display:none; }
     body.run .wrap{ gap: 0; }
     body.run .topbar{ display:none; }
@@ -251,7 +250,7 @@
       padding-bottom: calc(18px + env(safe-area-inset-bottom));
     }
 
-    /* In RUN VIEW: keep stop button accessible as overlay */
+    /* Run controls overlay: Stop + Skip */
     .runControls{
       position: fixed;
       left: 12px;
@@ -261,7 +260,10 @@
       z-index: 1000;
       gap: 10px;
     }
-    body.run .runControls{ display:grid; grid-template-columns: 1fr; }
+    body.run .runControls{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+    }
     .runControls button{
       min-height: 58px;
       border-radius: 18px;
@@ -278,8 +280,8 @@
     <button class="splashBtn primary" id="enterBtn">Enter</button>
   </div>
 
-  <!-- RUN VIEW stop control -->
   <div class="runControls" id="runControls">
+    <button id="skipRun">Skip</button>
     <button id="stopRun" class="danger">Stop</button>
   </div>
 
@@ -396,6 +398,7 @@
     const startBtn = el("start");
     const stopBtn  = el("stop");
     const stopRunBtn = el("stopRun");
+    const skipRunBtn = el("skipRun");
     const testVoiceBtn = el("testVoice");
 
     let intervalMin = 10;
@@ -456,15 +459,14 @@
       return rotation[(idx + 1) % rotation.length].key;
     }
 
+    // Blink only mode + time
     function setBlink(on){
       if (on){
-        modeEl.classList.add("blink");
-        timeEl.classList.add("blink");
-        nextEl.classList.add("blink");
+        modeEl.classList.add("blinkMode");
+        timeEl.classList.add("blinkTime");
       } else {
-        modeEl.classList.remove("blink");
-        timeEl.classList.remove("blink");
-        nextEl.classList.remove("blink");
+        modeEl.classList.remove("blinkMode");
+        timeEl.classList.remove("blinkTime");
       }
     }
 
@@ -556,7 +558,7 @@
       statusEl.textContent = `Running: ${current.key}`;
 
       modeEl.textContent = current.key;
-      nextEl.textContent = `NEXT UP: ${nextKey}`;   // this is the "next class" on the colored screen
+      nextEl.textContent = `NEXT UP: ${nextKey}`;
       subEl.textContent = `${intervalMin} minutes slot`;
 
       slotEndsAt = Date.now() + slotDurationMs;
@@ -654,9 +656,27 @@
       refreshIdleView();
     }
 
+    // Skip: end current slot immediately and jump to next (with announcements)
+    function skip(){
+      if (!running || rotation.length === 0) return;
+
+      if (tickTimer){
+        clearInterval(tickTimer);
+        tickTimer = null;
+      }
+
+      // End message for current mode, then advance and start next
+      const current = rotation[idx];
+      speak(`${current.key} training end`);
+
+      idx = (idx + 1) % rotation.length;
+      startSlot();
+    }
+
     startBtn.onclick = start;
     stopBtn.onclick = stop;
     stopRunBtn.onclick = stop;
+    skipRunBtn.onclick = skip;
 
     testVoiceBtn.onclick = () => {
       speak("Test voice. time slash sloth.");

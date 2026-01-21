@@ -65,10 +65,7 @@
       padding: 12px;
     }
 
-    .grid{
-      display:grid;
-      gap: 10px;
-    }
+    .grid{ display:grid; gap: 10px; }
     .grid.cols2{ grid-template-columns: 1fr 1fr; }
 
     .chip{
@@ -91,12 +88,7 @@
       flex: 0 0 auto;
     }
 
-    .btnrow{
-      display:grid;
-      gap: 10px;
-    }
-
-    /* 4 interval buttons now */
+    .btnrow{ display:grid; gap: 10px; }
     .btnrow.intervals{ grid-template-columns: repeat(4, 1fr); }
     .btnrow.controls{ grid-template-columns: 1fr 1fr; }
     .btnrow.misc{ grid-template-columns: 1fr; }
@@ -161,10 +153,10 @@
     }
 
     .next{
-      font-size: clamp(14px, 2.7vw, 18px);
-      font-weight: 800;
-      opacity: .92;
-      letter-spacing: .3px;
+      font-size: clamp(16px, 3.2vw, 22px);
+      font-weight: 900;
+      opacity: .95;
+      letter-spacing: .4px;
       z-index: 2;
     }
 
@@ -225,6 +217,7 @@
       color: rgba(0,0,0,.8);
     }
 
+    /* Splash */
     .splash{
       position:fixed;
       inset:0;
@@ -241,26 +234,38 @@
       text-align:center;
     }
     .splash.hide{ opacity:0; pointer-events:none; }
-    .splashLogo{
-      width: min(260px, 70vw);
-      height: auto;
-      display:block;
+    .splashLogo{ width: min(260px, 70vw); height:auto; display:block; }
+    .splashText{ font-weight: 900; letter-spacing: .6px; font-size: 22px; opacity: .95; }
+    .splashSub{ font-size: 13px; opacity: .78; max-width: 46ch; line-height: 1.35; }
+    .splashBtn{ margin-top: 8px; width: min(360px, 92vw); }
+
+    /* RUN VIEW (make the colored stage basically fullscreen) */
+    body.run .panel{ display:none; }
+    body.run .wrap{ gap: 0; }
+    body.run .topbar{ display:none; }
+    body.run .stage{
+      flex: 1 1 auto;
+      border-radius: 22px;
+      margin: 0;
+      padding-top: calc(18px + env(safe-area-inset-top));
+      padding-bottom: calc(18px + env(safe-area-inset-bottom));
     }
-    .splashText{
-      font-weight: 900;
-      letter-spacing: .6px;
-      font-size: 22px;
-      opacity: .95;
+
+    /* In RUN VIEW: keep stop button accessible as overlay */
+    .runControls{
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      display:none;
+      z-index: 1000;
+      gap: 10px;
     }
-    .splashSub{
-      font-size: 13px;
-      opacity: .78;
-      max-width: 46ch;
-      line-height: 1.35;
-    }
-    .splashBtn{
-      margin-top: 8px;
-      width: min(360px, 92vw);
+    body.run .runControls{ display:grid; grid-template-columns: 1fr; }
+    .runControls button{
+      min-height: 58px;
+      border-radius: 18px;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -269,10 +274,13 @@
   <div class="splash" id="splash">
     <img src="logo.png" class="splashLogo" alt="time/sloth logo">
     <div class="splashText">time/sloth</div>
-    <div class="splashSub">
-      Tap Enter to enable voice (important on Android) and start.
-    </div>
+    <div class="splashSub">Tap Enter to enable voice (important on Android) and start.</div>
     <button class="splashBtn primary" id="enterBtn">Enter</button>
+  </div>
+
+  <!-- RUN VIEW stop control -->
+  <div class="runControls" id="runControls">
+    <button id="stopRun" class="danger">Stop</button>
   </div>
 
   <div class="wrap">
@@ -387,6 +395,7 @@
 
     const startBtn = el("start");
     const stopBtn  = el("stop");
+    const stopRunBtn = el("stopRun");
     const testVoiceBtn = el("testVoice");
 
     let intervalMin = 10;
@@ -399,35 +408,22 @@
     let tickTimer = null;
     let warnedAtOneMinute = false;
 
-    // --- Wake Lock ---
+    // Wake Lock
     let wakeLock = null;
-
     async function requestWakeLock(){
       try{
-        if (!("wakeLock" in navigator)) {
-          setToast("Wake Lock not supported on this device/browser.");
-          return;
-        }
+        if (!("wakeLock" in navigator)) { setToast("Wake Lock not supported on this device/browser."); return; }
         wakeLock = await navigator.wakeLock.request("screen");
         setToast("Screen will stay awake.");
       } catch (e){
         setToast("Could not enable Wake Lock (try Chrome, keep the page active).");
       }
     }
-
     async function releaseWakeLock(){
-      try{
-        if (wakeLock){
-          await wakeLock.release();
-          wakeLock = null;
-        }
-      } catch(e){}
+      try{ if (wakeLock){ await wakeLock.release(); wakeLock = null; } } catch(e){}
     }
-
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible" && running){
-        requestWakeLock();
-      }
+      if (document.visibilityState === "visible" && running) requestWakeLock();
     });
 
     function setToast(msg){ toastEl.textContent = msg || ""; }
@@ -472,22 +468,18 @@
       }
     }
 
-    // --- TTS (English) ---
+    // TTS
     function pickEnglishVoice(){
       const voices = speechSynthesis.getVoices?.() || [];
-      const preferred = voices.find(v => /en-US/i.test(v.lang)) ||
-                        voices.find(v => /en-GB/i.test(v.lang)) ||
-                        voices.find(v => /^en/i.test(v.lang));
-      return preferred || null;
+      return voices.find(v => /en-US/i.test(v.lang)) ||
+             voices.find(v => /en-GB/i.test(v.lang)) ||
+             voices.find(v => /^en/i.test(v.lang)) || null;
     }
-
     function speak(text){
       try{
         if (!("speechSynthesis" in window)) return;
-        // trigger voice loading
         speechSynthesis.getVoices?.();
         speechSynthesis.cancel();
-
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "en-US";
         const v = pickEnglishVoice();
@@ -498,7 +490,6 @@
         speechSynthesis.speak(u);
       } catch(e){}
     }
-
     if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
@@ -513,9 +504,7 @@
       b10.classList.toggle("primary", min === 10);
       b15.classList.toggle("primary", min === 15);
 
-      if (!running){
-        timeEl.textContent = fmtMMSS(slotDurationMs);
-      }
+      if (!running) timeEl.textContent = fmtMMSS(slotDurationMs);
       setToast(`Interval set to ${intervalMin} minutes.`);
     }
 
@@ -565,8 +554,9 @@
       applyStageBg(current.cls);
       badge.textContent = "RUNNING";
       statusEl.textContent = `Running: ${current.key}`;
+
       modeEl.textContent = current.key;
-      nextEl.textContent = `NEXT UP: ${nextKey}`;
+      nextEl.textContent = `NEXT UP: ${nextKey}`;   // this is the "next class" on the colored screen
       subEl.textContent = `${intervalMin} minutes slot`;
 
       slotEndsAt = Date.now() + slotDurationMs;
@@ -588,9 +578,7 @@
         setBlink(true);
       }
 
-      if (remaining <= 0){
-        endSlot();
-      }
+      if (remaining <= 0) endSlot();
     }
 
     function endSlot(){
@@ -598,10 +586,8 @@
         clearInterval(tickTimer);
         tickTimer = null;
       }
-
       const current = rotation[idx];
       speak(`${current.key} training end`);
-
       idx = (idx + 1) % rotation.length;
       startSlot();
     }
@@ -615,6 +601,11 @@
       b5.disabled = lock;
       b10.disabled = lock;
       b15.disabled = lock;
+      testVoiceBtn.disabled = lock;
+    }
+
+    function enterRunView(on){
+      document.body.classList.toggle("run", !!on);
     }
 
     function start(){
@@ -626,6 +617,7 @@
 
       running = true;
       requestWakeLock();
+      enterRunView(true);
 
       rotation = rot;
       idx = 0;
@@ -641,6 +633,7 @@
     function stop(){
       running = false;
       releaseWakeLock();
+      enterRunView(false);
 
       if (tickTimer){
         clearInterval(tickTimer);
@@ -663,6 +656,7 @@
 
     startBtn.onclick = start;
     stopBtn.onclick = stop;
+    stopRunBtn.onclick = stop;
 
     testVoiceBtn.onclick = () => {
       speak("Test voice. time slash sloth.");
@@ -675,9 +669,7 @@
     }
 
     enterBtn.onclick = () => {
-      // This is a user gesture: best place to unlock voice on Android
       speak("Voice enabled");
-      // nudge voice loading once more
       setTimeout(() => { try { speechSynthesis.getVoices?.(); } catch(e){} }, 200);
       hideSplash();
     };

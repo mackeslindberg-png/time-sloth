@@ -93,9 +93,13 @@
 
     .btnrow{
       display:grid;
-      grid-template-columns: repeat(3, 1fr);
       gap: 10px;
     }
+
+    /* 4 interval buttons now */
+    .btnrow.intervals{ grid-template-columns: repeat(4, 1fr); }
+    .btnrow.controls{ grid-template-columns: 1fr 1fr; }
+    .btnrow.misc{ grid-template-columns: 1fr; }
 
     button{
       font: inherit;
@@ -130,16 +134,14 @@
       isolation: isolate;
     }
 
-    /* sharp logo in upper-left on run screen */
     .stageLogo{
       position:absolute;
       top: 12px;
       left: 12px;
-      height: 40px;      /* "lagom storlek" */
+      height: 40px;
       width: auto;
       z-index: 5;
       pointer-events:none;
-      filter: none;
     }
 
     .mode{
@@ -208,7 +210,6 @@
     .small{ font-size: 12px; opacity:.78; }
     .toast{ margin-top: 6px; font-size: 12px; opacity: .9; min-height: 16px; }
 
-    /* Mode backgrounds (your spec) */
     .bg-fwd{ background: #1e5aa8; }
     .bg-touring{ background: #f08a1a; }
     .bg-mod{ background: #c62828; }
@@ -224,7 +225,6 @@
       color: rgba(0,0,0,.8);
     }
 
-    /* Splash screen */
     .splash{
       position:fixed;
       inset:0;
@@ -266,12 +266,11 @@
 </head>
 
 <body>
-  <!-- Splash on startup -->
   <div class="splash" id="splash">
     <img src="logo.png" class="splashLogo" alt="time/sloth logo">
     <div class="splashText">time/sloth</div>
     <div class="splashSub">
-      Tap to enter. (This also enables voice on mobile browsers.)
+      Tap Enter to enable voice (important on Android) and start.
     </div>
     <button class="splashBtn primary" id="enterBtn">Enter</button>
   </div>
@@ -322,23 +321,27 @@
         </div>
       </div>
 
-      <div class="btnrow" style="margin-top:10px;">
+      <div class="btnrow intervals" style="margin-top:10px;">
+        <button id="b2">2 min</button>
         <button id="b5">5 min</button>
         <button id="b10" class="primary">10 min</button>
         <button id="b15">15 min</button>
       </div>
 
-      <div class="btnrow" style="margin-top:10px; grid-template-columns: 1fr 1fr;">
+      <div class="btnrow controls" style="margin-top:10px;">
         <button id="start" class="primary">Start</button>
         <button id="stop" class="danger" disabled>Stop</button>
       </div>
 
+      <div class="btnrow misc" style="margin-top:10px;">
+        <button id="testVoice">Test Voice</button>
+      </div>
+
       <div class="toast" id="toast"></div>
-      <div class="hint">Wake lock funkar bäst i Chrome på Android. Sidan måste vara aktiv.</div>
+      <div class="hint">Wake lock funkar bäst i Chrome på Android. Kontrollera även “Media volume” och att sidan inte är muted.</div>
     </div>
 
     <div class="stage" id="stage">
-      <!-- sharp logo on run screen -->
       <img src="logo.png" class="stageLogo" alt="time/sloth logo">
       <div class="badge" id="badge">IDLE</div>
       <div class="mode" id="mode">Select modes</div>
@@ -349,7 +352,6 @@
   </div>
 
   <script>
-    // --- Config ---
     const MODE_ORDER = [
       { key: "FWD",      cls: "bg-fwd" },
       { key: "Touring",  cls: "bg-touring" },
@@ -357,7 +359,6 @@
       { key: "Beginner", cls: "bg-beginner" },
     ];
 
-    // --- Elements ---
     const el = (id) => document.getElementById(id);
 
     const splash = el("splash");
@@ -378,6 +379,7 @@
     const mMod = el("mMod");
     const mBeginner = el("mBeginner");
 
+    const b2 = el("b2");
     const b5 = el("b5");
     const b10 = el("b10");
     const b15 = el("b15");
@@ -385,8 +387,8 @@
 
     const startBtn = el("start");
     const stopBtn  = el("stop");
+    const testVoiceBtn = el("testVoice");
 
-    // --- State ---
     let intervalMin = 10;
     let running = false;
     let rotation = [];
@@ -397,7 +399,7 @@
     let tickTimer = null;
     let warnedAtOneMinute = false;
 
-    // --- Wake Lock (prevent screen sleep) ---
+    // --- Wake Lock ---
     let wakeLock = null;
 
     async function requestWakeLock(){
@@ -428,10 +430,7 @@
       }
     });
 
-    // --- Utilities ---
-    function setToast(msg){
-      toastEl.textContent = msg || "";
-    }
+    function setToast(msg){ toastEl.textContent = msg || ""; }
 
     function fmtMMSS(ms){
       const total = Math.max(0, Math.ceil(ms / 1000));
@@ -446,7 +445,6 @@
       if (mTouring.checked) selected.add("Touring");
       if (mMod.checked) selected.add("Mod");
       if (mBeginner.checked) selected.add("Beginner");
-
       rotation = MODE_ORDER.filter(m => selected.has(m.key));
       return rotation;
     }
@@ -486,7 +484,10 @@
     function speak(text){
       try{
         if (!("speechSynthesis" in window)) return;
+        // trigger voice loading
+        speechSynthesis.getVoices?.();
         speechSynthesis.cancel();
+
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "en-US";
         const v = pickEnglishVoice();
@@ -502,12 +503,12 @@
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
 
-    // --- Interval selection UI ---
     function setIntervalMinutes(min){
       intervalMin = min;
       slotDurationMs = intervalMin * 60 * 1000;
       intervalLabel.textContent = `${intervalMin} min`;
 
+      b2.classList.toggle("primary", min === 2);
       b5.classList.toggle("primary", min === 5);
       b10.classList.toggle("primary", min === 10);
       b15.classList.toggle("primary", min === 15);
@@ -518,11 +519,11 @@
       setToast(`Interval set to ${intervalMin} minutes.`);
     }
 
+    b2.onclick  = () => setIntervalMinutes(2);
     b5.onclick  = () => setIntervalMinutes(5);
     b10.onclick = () => setIntervalMinutes(10);
     b15.onclick = () => setIntervalMinutes(15);
 
-    // --- Mode selection (idle only) ---
     function refreshIdleView(){
       const rot = buildRotation();
       if (rot.length === 0){
@@ -554,7 +555,6 @@
       if (!running) refreshIdleView();
     };
 
-    // --- Core run loop ---
     function startSlot(){
       const current = rotation[idx];
       const nextKey = getNextModeKey();
@@ -611,6 +611,7 @@
       mTouring.disabled = lock;
       mMod.disabled = lock;
       mBeginner.disabled = lock;
+      b2.disabled = lock;
       b5.disabled = lock;
       b10.disabled = lock;
       b15.disabled = lock;
@@ -663,22 +664,24 @@
     startBtn.onclick = start;
     stopBtn.onclick = stop;
 
-    // --- Splash handling ---
+    testVoiceBtn.onclick = () => {
+      speak("Test voice. time slash sloth.");
+      setToast("If you heard that, voice is working.");
+    };
+
     function hideSplash(){
       splash.classList.add("hide");
-      // remove from tab order after fade
       setTimeout(() => { splash.style.display = "none"; }, 450);
     }
 
-    // On mobile, this "enter" click also helps unlock speech
     enterBtn.onclick = () => {
-      // warm up TTS quietly (some browsers behave better after first utterance)
-      speak(" ");
+      // This is a user gesture: best place to unlock voice on Android
+      speak("Voice enabled");
+      // nudge voice loading once more
+      setTimeout(() => { try { speechSynthesis.getVoices?.(); } catch(e){} }, 200);
       hideSplash();
     };
 
-    // If you want splash to always appear each load, keep as-is.
-    // --- Init ---
     setIntervalMinutes(10);
     refreshIdleView();
   </script>

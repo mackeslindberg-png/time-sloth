@@ -131,7 +131,7 @@
       position:absolute;
       top: 12px;
       left: 12px;
-      height: 120px; /* was 40px */
+      height: 120px;
       width: auto;
       z-index: 5;
       pointer-events:none;
@@ -191,6 +191,23 @@
       z-index: 3;
     }
 
+    /* Progress bar (time left) */
+    .progressWrap{
+      position:absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 8px;
+      z-index: 4;
+      background: rgba(0,0,0,.18);
+    }
+    .progressBar{
+      height: 100%;
+      width: 0%;
+      background: rgba(255,255,255,.55);
+      transform-origin: left center;
+    }
+
     .hint{ font-size: 12px; opacity: .8; }
     .row{
       display:flex;
@@ -204,6 +221,7 @@
 
     .bg-fwd{ background: #1e5aa8; }
     .bg-touring{ background: #f08a1a; }
+    .bg-112{ background: #6a1b9a; }
     .bg-mod{ background: #c62828; }
     .bg-beginner{ background: #ffffff; }
     .bg-beginner .mode,
@@ -216,6 +234,8 @@
       border-color: rgba(0,0,0,.10);
       color: rgba(0,0,0,.8);
     }
+    .bg-beginner .progressWrap{ background: rgba(0,0,0,.10); }
+    .bg-beginner .progressBar{ background: rgba(0,0,0,.35); }
 
     .splash{
       position:fixed;
@@ -269,6 +289,28 @@
       border-radius: 18px;
       font-size: 16px;
     }
+
+    /* Slider */
+    .sliderRow{
+      margin-top: 10px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .sliderRow input[type="range"]{
+      width: 100%;
+    }
+    .sliderVal{
+      min-width: 56px;
+      text-align:right;
+      font-weight: 900;
+      opacity: .95;
+      font-size: 12px;
+    }
   </style>
 </head>
 
@@ -296,7 +338,7 @@
 
     <div class="panel">
       <div class="row">
-        <div class="small"><b>Modes</b> (rotation: FWD → Touring → Mod → Beginner)</div>
+        <div class="small"><b>Modes</b> (rotation in shown order)</div>
         <div class="small">Interval: <b id="intervalLabel">10 min</b></div>
       </div>
 
@@ -308,6 +350,7 @@
             <span><b>FWD</b></span>
           </label>
         </div>
+
         <div class="chip">
           <label>
             <input type="checkbox" id="mTouring" checked>
@@ -315,6 +358,15 @@
             <span><b>Touring</b></span>
           </label>
         </div>
+
+        <div class="chip">
+          <label>
+            <input type="checkbox" id="m112" checked>
+            <span class="dot" style="background:#6a1b9a"></span>
+            <span><b>1/12</b></span>
+          </label>
+        </div>
+
         <div class="chip">
           <label>
             <input type="checkbox" id="mMod" checked>
@@ -322,7 +374,8 @@
             <span><b>Mod</b></span>
           </label>
         </div>
-        <div class="chip">
+
+        <div class="chip" style="grid-column: 1 / -1;">
           <label>
             <input type="checkbox" id="mBeginner" checked>
             <span class="dot" style="background:#ffffff"></span>
@@ -332,10 +385,16 @@
       </div>
 
       <div class="btnrow intervals" style="margin-top:10px;">
-        <button id="b2">2 min</button>
+        <button id="b35">35 s</button>
         <button id="b5">5 min</button>
         <button id="b10" class="primary">10 min</button>
         <button id="b15">15 min</button>
+      </div>
+
+      <div class="sliderRow">
+        <div class="small"><b>Custom</b></div>
+        <input type="range" id="customMin" min="1" max="15" step="1" value="10">
+        <div class="sliderVal" id="customLabel">10 min</div>
       </div>
 
       <div class="btnrow controls" style="margin-top:10px;">
@@ -354,19 +413,25 @@
     <div class="stage" id="stage">
       <img src="logo.png" class="stageLogo" alt="time/sloth logo">
       <div class="badge" id="badge">IDLE</div>
+
       <div class="mode" id="mode">Select modes</div>
       <div class="time" id="time">--:--</div>
       <div class="next" id="next">NEXT UP: --</div>
       <div class="sub" id="sub">Start to begin rotation</div>
+
+      <div class="progressWrap" aria-hidden="true">
+        <div class="progressBar" id="progressBar"></div>
+      </div>
     </div>
   </div>
 
   <script>
     const MODE_ORDER = [
-      { key: "FWD",      cls: "bg-fwd" },
-      { key: "Touring",  cls: "bg-touring" },
-      { key: "Mod",      cls: "bg-mod" },
-      { key: "Beginner", cls: "bg-beginner" },
+      { key: "FWD",      cls: "bg-fwd",      voice: "Front wheel drive class" },
+      { key: "Touring",  cls: "bg-touring",  voice: "Touring stock class" },
+      { key: "1/12",     cls: "bg-112",      voice: "One twelve class" },
+      { key: "Mod",      cls: "bg-mod",      voice: "Modify class" },
+      { key: "Beginner", cls: "bg-beginner", voice: "Beginner and rookies" },
     ];
 
     const el = (id) => document.getElementById(id);
@@ -384,16 +449,22 @@
     const nextEl = el("next");
     const subEl = el("sub");
 
+    const progressBar = el("progressBar");
+
     const mFWD = el("mFWD");
     const mTouring = el("mTouring");
+    const m112 = el("m112");
     const mMod = el("mMod");
     const mBeginner = el("mBeginner");
 
-    const b2 = el("b2");
+    const b35 = el("b35");
     const b5 = el("b5");
     const b10 = el("b10");
     const b15 = el("b15");
     const intervalLabel = el("intervalLabel");
+
+    const customMin = el("customMin");
+    const customLabel = el("customLabel");
 
     const startBtn = el("start");
     const stopBtn  = el("stop");
@@ -401,12 +472,13 @@
     const skipRunBtn = el("skipRun");
     const testVoiceBtn = el("testVoice");
 
-    let intervalMin = 10;
     let running = false;
     let rotation = [];
     let idx = 0;
 
-    let slotDurationMs = intervalMin * 60 * 1000;
+    // Duration: either seconds (35s) or minutes (1-15)
+    let durationMs = 10 * 60 * 1000;
+
     let slotEndsAt = 0;
     let tickTimer = null;
     let warnedAtOneMinute = false;
@@ -438,10 +510,23 @@
       return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
     }
 
+    function fmtIntervalLabel(ms){
+      const totalSec = Math.max(1, Math.round(ms / 1000));
+      if (totalSec < 60) return `${totalSec} s`;
+      const min = Math.round(totalSec / 60);
+      return `${min} min`;
+    }
+
+    function voiceForKey(key){
+      const m = MODE_ORDER.find(x => x.key === key);
+      return m ? m.voice : key;
+    }
+
     function buildRotation(){
       const selected = new Set();
       if (mFWD.checked) selected.add("FWD");
       if (mTouring.checked) selected.add("Touring");
+      if (m112.checked) selected.add("1/12");
       if (mMod.checked) selected.add("Mod");
       if (mBeginner.checked) selected.add("Beginner");
       rotation = MODE_ORDER.filter(m => selected.has(m.key));
@@ -470,6 +555,12 @@
       }
     }
 
+    // Progress bar
+    function setProgress(remainingMs){
+      const pct = Math.max(0, Math.min(1, remainingMs / durationMs));
+      progressBar.style.width = (pct * 100).toFixed(2) + "%";
+    }
+
     // TTS
     function pickEnglishVoice(){
       const voices = speechSynthesis.getVoices?.() || [];
@@ -496,24 +587,44 @@
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
 
-    function setIntervalMinutes(min){
-      intervalMin = min;
-      slotDurationMs = intervalMin * 60 * 1000;
-      intervalLabel.textContent = `${intervalMin} min`;
+    function updateIntervalUI(){
+      const label = fmtIntervalLabel(durationMs);
+      intervalLabel.textContent = label;
+      customLabel.textContent = label;
 
-      b2.classList.toggle("primary", min === 2);
-      b5.classList.toggle("primary", min === 5);
-      b10.classList.toggle("primary", min === 10);
-      b15.classList.toggle("primary", min === 15);
-
-      if (!running) timeEl.textContent = fmtMMSS(slotDurationMs);
-      setToast(`Interval set to ${intervalMin} minutes.`);
+      // Preset highlight
+      b35.classList.toggle("primary", Math.round(durationMs/1000) === 35);
+      b5.classList.toggle("primary", durationMs === 5 * 60 * 1000);
+      b10.classList.toggle("primary", durationMs === 10 * 60 * 1000);
+      b15.classList.toggle("primary", durationMs === 15 * 60 * 1000);
     }
 
-    b2.onclick  = () => setIntervalMinutes(2);
-    b5.onclick  = () => setIntervalMinutes(5);
-    b10.onclick = () => setIntervalMinutes(10);
-    b15.onclick = () => setIntervalMinutes(15);
+    function setDurationMs(ms, { syncSlider = true } = {}){
+      durationMs = ms;
+      updateIntervalUI();
+
+      if (syncSlider){
+        const sec = Math.round(ms / 1000);
+        // slider is minutes 1..15. If not a whole-minute value, don't force it.
+        if (sec % 60 === 0){
+          const min = sec / 60;
+          if (min >= 1 && min <= 15) customMin.value = String(min);
+        }
+      }
+
+      if (!running) timeEl.textContent = fmtMMSS(durationMs);
+      setToast(`Interval set to ${fmtIntervalLabel(durationMs)}.`);
+    }
+
+    b35.onclick  = () => setDurationMs(35 * 1000);
+    b5.onclick   = () => setDurationMs(5 * 60 * 1000);
+    b10.onclick  = () => setDurationMs(10 * 60 * 1000);
+    b15.onclick  = () => setDurationMs(15 * 60 * 1000);
+
+    customMin.oninput = () => {
+      const min = Number(customMin.value || 10);
+      setDurationMs(min * 60 * 1000, { syncSlider: false });
+    };
 
     function refreshIdleView(){
       const rot = buildRotation();
@@ -525,6 +636,7 @@
         subEl.textContent = "Pick at least one mode.";
         applyStageBg(null);
         setBlink(false);
+        setProgress(0);
         startBtn.disabled = true;
         return;
       }
@@ -534,15 +646,16 @@
       const nextKey = (rot.length === 1) ? first.key : rot[1].key;
 
       badge.textContent = "IDLE";
-      modeEl.textContent = first.key;
-      timeEl.textContent = fmtMMSS(slotDurationMs);
+      modeEl.textContent = first.key;              // screen text stays FWD / Touring / 1/12 / Mod / Beginner
+      timeEl.textContent = fmtMMSS(durationMs);
       nextEl.textContent = `NEXT UP: ${nextKey}`;
       subEl.textContent = "Press Start to begin.";
       applyStageBg(first.cls);
       setBlink(false);
+      setProgress(durationMs);
     }
 
-    mFWD.onchange = mTouring.onchange = mMod.onchange = mBeginner.onchange = () => {
+    mFWD.onchange = mTouring.onchange = m112.onchange = mMod.onchange = mBeginner.onchange = () => {
       if (!running) refreshIdleView();
     };
 
@@ -559,11 +672,12 @@
 
       modeEl.textContent = current.key;
       nextEl.textContent = `NEXT UP: ${nextKey}`;
-      subEl.textContent = `${intervalMin} minutes slot`;
+      subEl.textContent = `${fmtIntervalLabel(durationMs)} slot`;
 
-      slotEndsAt = Date.now() + slotDurationMs;
+      slotEndsAt = Date.now() + durationMs;
 
-      speak(`${current.key}, ${intervalMin} minutes`);
+      // Voice: custom phrases + duration
+      speak(`${current.voice}, ${fmtIntervalLabel(durationMs)}`);
 
       tick();
       tickTimer = setInterval(tick, 200);
@@ -572,12 +686,16 @@
     function tick(){
       const remaining = slotEndsAt - Date.now();
       timeEl.textContent = fmtMMSS(remaining);
+      setProgress(remaining);
 
-      if (!warnedAtOneMinute && remaining <= 60 * 1000 && remaining > 0){
-        warnedAtOneMinute = true;
-        const nextKey = getNextModeKey();
-        speak(`One minute left to drive, ${nextKey} get ready`);
-        setBlink(true);
+      // 1-minute warning only when duration allows it
+      if (durationMs > 70 * 1000) {
+        if (!warnedAtOneMinute && remaining <= 60 * 1000 && remaining > 0){
+          warnedAtOneMinute = true;
+          const nextKey = getNextModeKey();
+          speak(`One minute left to drive. ${voiceForKey(nextKey)}, get ready`);
+          setBlink(true);
+        }
       }
 
       if (remaining <= 0) endSlot();
@@ -589,7 +707,7 @@
         tickTimer = null;
       }
       const current = rotation[idx];
-      speak(`${current.key} training end`);
+      speak(`${current.voice} training end`);
       idx = (idx + 1) % rotation.length;
       startSlot();
     }
@@ -597,12 +715,16 @@
     function lockInputs(lock){
       mFWD.disabled = lock;
       mTouring.disabled = lock;
+      m112.disabled = lock;
       mMod.disabled = lock;
       mBeginner.disabled = lock;
-      b2.disabled = lock;
+
+      b35.disabled = lock;
       b5.disabled = lock;
       b10.disabled = lock;
       b15.disabled = lock;
+
+      customMin.disabled = lock;
       testVoiceBtn.disabled = lock;
     }
 
@@ -647,6 +769,7 @@
       badge.textContent = "STOPPED";
       statusEl.textContent = "Stopped";
       setBlink(false);
+      setProgress(0);
 
       startBtn.disabled = false;
       stopBtn.disabled = true;
@@ -665,9 +788,8 @@
         tickTimer = null;
       }
 
-      // End message for current mode, then advance and start next
       const current = rotation[idx];
-      speak(`${current.key} training end`);
+      speak(`${current.voice} training end`);
 
       idx = (idx + 1) % rotation.length;
       startSlot();
@@ -694,7 +816,8 @@
       hideSplash();
     };
 
-    setIntervalMinutes(10);
+    // Default: 10 min
+    setDurationMs(10 * 60 * 1000);
     refreshIdleView();
   </script>
 </body>

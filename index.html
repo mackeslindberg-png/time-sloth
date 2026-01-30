@@ -126,7 +126,6 @@
       isolation: isolate;
     }
 
-    /* logo 3x larger */
     .stageLogo{
       position:absolute;
       top: 12px;
@@ -153,7 +152,6 @@
       z-index: 2;
     }
 
-    /* NEXT UP moved down & italic */
     .next{
       margin-top: clamp(12px, 4vh, 28px);
       font-size: clamp(16px, 3.2vw, 22px);
@@ -171,7 +169,6 @@
       z-index: 2;
     }
 
-    /* Blink only mode + time (NOT next) */
     .blinkMode{ animation: blink 0.85s step-end infinite; color: var(--black) !important; text-shadow:none !important; }
     .blinkTime{ animation: blink 0.85s step-end infinite; color: var(--black) !important; text-shadow:none !important; }
     @keyframes blink{ 50%{ opacity: .15; } }
@@ -191,21 +188,56 @@
       z-index: 3;
     }
 
-    /* Progress bar (time left) */
-    .progressWrap{
+    /* Progress track with flags + car */
+    .track{
       position:absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 8px;
+      left: 12px;
+      right: 12px;
+      bottom: 10px;
+      height: 26px;
       z-index: 4;
-      background: rgba(0,0,0,.18);
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      pointer-events:none;
     }
-    .progressBar{
-      height: 100%;
-      width: 0%;
-      background: rgba(255,255,255,.55);
-      transform-origin: left center;
+
+    .flag{
+      font-size: 18px;
+      line-height: 1;
+      filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
+      opacity: .95;
+    }
+
+    .lane{
+      position: relative;
+      flex: 1 1 auto;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.18);
+      overflow: hidden;
+    }
+
+    /* subtle lane fill (optional), kept minimal */
+    .laneFill{
+      position:absolute;
+      left:0;
+      top:0;
+      bottom:0;
+      width: 100%;
+      background: rgba(255,255,255,.10);
+      opacity: .55;
+    }
+
+    .car{
+      position:absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 16px;
+      line-height: 1;
+      filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
+      left: 0%;
+      will-change: left;
     }
 
     .hint{ font-size: 12px; opacity: .8; }
@@ -224,6 +256,7 @@
     .bg-112{ background: #6a1b9a; }
     .bg-mod{ background: #c62828; }
     .bg-beginner{ background: #ffffff; }
+
     .bg-beginner .mode,
     .bg-beginner .time,
     .bg-beginner .next,
@@ -234,8 +267,9 @@
       border-color: rgba(0,0,0,.10);
       color: rgba(0,0,0,.8);
     }
-    .bg-beginner .progressWrap{ background: rgba(0,0,0,.10); }
-    .bg-beginner .progressBar{ background: rgba(0,0,0,.35); }
+    .bg-beginner .lane{ background: rgba(0,0,0,.10); }
+    .bg-beginner .laneFill{ background: rgba(0,0,0,.18); }
+    .bg-beginner .flag, .bg-beginner .car{ filter: none; }
 
     .splash{
       position:fixed;
@@ -258,7 +292,6 @@
     .splashSub{ font-size: 13px; opacity: .78; max-width: 46ch; line-height: 1.35; }
     .splashBtn{ margin-top: 8px; width: min(360px, 92vw); }
 
-    /* RUN VIEW fullscreen */
     body.run .panel{ display:none; }
     body.run .wrap{ gap: 0; }
     body.run .topbar{ display:none; }
@@ -270,7 +303,6 @@
       padding-bottom: calc(18px + env(safe-area-inset-bottom));
     }
 
-    /* Run controls overlay: Stop + Skip */
     .runControls{
       position: fixed;
       left: 12px;
@@ -290,7 +322,6 @@
       font-size: 16px;
     }
 
-    /* Slider */
     .sliderRow{
       margin-top: 10px;
       display:flex;
@@ -301,9 +332,7 @@
       border-radius: 14px;
       padding: 10px 12px;
     }
-    .sliderRow input[type="range"]{
-      width: 100%;
-    }
+    .sliderRow input[type="range"]{ width: 100%; }
     .sliderVal{
       min-width: 56px;
       text-align:right;
@@ -419,8 +448,14 @@
       <div class="next" id="next">NEXT UP: --</div>
       <div class="sub" id="sub">Start to begin rotation</div>
 
-      <div class="progressWrap" aria-hidden="true">
-        <div class="progressBar" id="progressBar"></div>
+      <!-- Track: start flag -> car -> finish flag -->
+      <div class="track" aria-hidden="true">
+        <div class="flag" title="Start">🏁</div>
+        <div class="lane">
+          <div class="laneFill"></div>
+          <div class="car" id="car" title="Car">🏎️</div>
+        </div>
+        <div class="flag" title="Finish">🚩</div>
       </div>
     </div>
   </div>
@@ -449,7 +484,7 @@
     const nextEl = el("next");
     const subEl = el("sub");
 
-    const progressBar = el("progressBar");
+    const carEl = el("car");
 
     const mFWD = el("mFWD");
     const mTouring = el("mTouring");
@@ -479,6 +514,7 @@
     // Duration: either seconds (35s) or minutes (1-15)
     let durationMs = 10 * 60 * 1000;
 
+    let slotStartedAt = 0;
     let slotEndsAt = 0;
     let tickTimer = null;
     let warnedAtOneMinute = false;
@@ -489,10 +525,7 @@
       try{
         if (!("wakeLock" in navigator)) { setToast("Wake Lock not supported on this device/browser."); return; }
         wakeLock = await navigator.wakeLock.request("screen");
-        setToast("Screen will stay awake.");
-      } catch (e){
-        setToast("Could not enable Wake Lock (try Chrome, keep the page active).");
-      }
+      } catch (e){}
     }
     async function releaseWakeLock(){
       try{ if (wakeLock){ await wakeLock.release(); wakeLock = null; } } catch(e){}
@@ -555,10 +588,15 @@
       }
     }
 
-    // Progress bar
-    function setProgress(remainingMs){
-      const pct = Math.max(0, Math.min(1, remainingMs / durationMs));
-      progressBar.style.width = (pct * 100).toFixed(2) + "%";
+    // Car moves LEFT -> RIGHT. 0% at start, 100% at finish.
+    function setCarProgress(nowMs){
+      const elapsed = Math.max(0, Math.min(durationMs, nowMs - slotStartedAt));
+      const pct = (elapsed / durationMs) * 100;
+      carEl.style.left = pct.toFixed(2) + "%";
+    }
+
+    function resetCar(){
+      carEl.style.left = "0%";
     }
 
     // TTS
@@ -592,7 +630,6 @@
       intervalLabel.textContent = label;
       customLabel.textContent = label;
 
-      // Preset highlight
       b35.classList.toggle("primary", Math.round(durationMs/1000) === 35);
       b5.classList.toggle("primary", durationMs === 5 * 60 * 1000);
       b10.classList.toggle("primary", durationMs === 10 * 60 * 1000);
@@ -605,7 +642,6 @@
 
       if (syncSlider){
         const sec = Math.round(ms / 1000);
-        // slider is minutes 1..15. If not a whole-minute value, don't force it.
         if (sec % 60 === 0){
           const min = sec / 60;
           if (min >= 1 && min <= 15) customMin.value = String(min);
@@ -613,6 +649,7 @@
       }
 
       if (!running) timeEl.textContent = fmtMMSS(durationMs);
+      if (!running) resetCar();
       setToast(`Interval set to ${fmtIntervalLabel(durationMs)}.`);
     }
 
@@ -636,8 +673,8 @@
         subEl.textContent = "Pick at least one mode.";
         applyStageBg(null);
         setBlink(false);
-        setProgress(0);
         startBtn.disabled = true;
+        resetCar();
         return;
       }
 
@@ -646,13 +683,13 @@
       const nextKey = (rot.length === 1) ? first.key : rot[1].key;
 
       badge.textContent = "IDLE";
-      modeEl.textContent = first.key;              // screen text stays FWD / Touring / 1/12 / Mod / Beginner
+      modeEl.textContent = first.key;
       timeEl.textContent = fmtMMSS(durationMs);
       nextEl.textContent = `NEXT UP: ${nextKey}`;
       subEl.textContent = "Press Start to begin.";
       applyStageBg(first.cls);
       setBlink(false);
-      setProgress(durationMs);
+      resetCar();
     }
 
     mFWD.onchange = mTouring.onchange = m112.onchange = mMod.onchange = mBeginner.onchange = () => {
@@ -674,21 +711,23 @@
       nextEl.textContent = `NEXT UP: ${nextKey}`;
       subEl.textContent = `${fmtIntervalLabel(durationMs)} slot`;
 
-      slotEndsAt = Date.now() + durationMs;
+      slotStartedAt = Date.now();
+      slotEndsAt = slotStartedAt + durationMs;
 
-      // Voice: custom phrases + duration
+      resetCar();
       speak(`${current.voice}, ${fmtIntervalLabel(durationMs)}`);
 
       tick();
-      tickTimer = setInterval(tick, 200);
+      tickTimer = setInterval(tick, 120);
     }
 
     function tick(){
-      const remaining = slotEndsAt - Date.now();
-      timeEl.textContent = fmtMMSS(remaining);
-      setProgress(remaining);
+      const now = Date.now();
+      const remaining = slotEndsAt - now;
 
-      // 1-minute warning only when duration allows it
+      timeEl.textContent = fmtMMSS(remaining);
+      setCarProgress(now);
+
       if (durationMs > 70 * 1000) {
         if (!warnedAtOneMinute && remaining <= 60 * 1000 && remaining > 0){
           warnedAtOneMinute = true;
@@ -706,6 +745,9 @@
         clearInterval(tickTimer);
         tickTimer = null;
       }
+      // snap car to finish
+      carEl.style.left = "100%";
+
       const current = rotation[idx];
       speak(`${current.voice} training end`);
       idx = (idx + 1) % rotation.length;
@@ -769,17 +811,16 @@
       badge.textContent = "STOPPED";
       statusEl.textContent = "Stopped";
       setBlink(false);
-      setProgress(0);
 
       startBtn.disabled = false;
       stopBtn.disabled = true;
       lockInputs(false);
 
+      resetCar();
       setToast("Stopped.");
       refreshIdleView();
     }
 
-    // Skip: end current slot immediately and jump to next (with announcements)
     function skip(){
       if (!running || rotation.length === 0) return;
 
@@ -787,6 +828,8 @@
         clearInterval(tickTimer);
         tickTimer = null;
       }
+
+      carEl.style.left = "100%";
 
       const current = rotation[idx];
       speak(`${current.voice} training end`);
@@ -816,7 +859,6 @@
       hideSplash();
     };
 
-    // Default: 10 min
     setDurationMs(10 * 60 * 1000);
     refreshIdleView();
   </script>

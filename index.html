@@ -159,7 +159,7 @@ body.run .runControls{
 
 <!-- SPLASH -->
 <div class="splash" id="splash">
-  <img src="loggaml.png" class="splashLogo" id="logoBtn" alt="time/sloth logo">
+  <img src="logo.png" class="splashLogo" id="logoBtn" alt="time/sloth logo">
   <div class="splashText">time/sloth</div>
   <div class="splashSub">Tryck på loggan för att starta appen och aktivera röst (viktigt på Android).</div>
 </div>
@@ -188,7 +188,7 @@ body.run .runControls{
 
   <!-- STAGE -->
   <div class="stage" id="stage">
-    <img src="loggaml.png" class="stageLogo" alt="">
+    <img src="logo.png" class="stageLogo" alt="">
     <div class="badge" id="badge">IDLE</div>
     <div class="group" id="group">Ready</div>
     <div class="time" id="time">02:00</div>
@@ -207,137 +207,111 @@ body.run .runControls{
 const el = id => document.getElementById(id)
 const stage = el("stage")
 
-let running = false
-let order = []
-let idx = 0
-let timer = null
-let endAt = 0
-
-let warned60 = false
-let warned10 = false
+let running=false, order=[], idx=0, timer=null, endAt=0
+let warned60=false, warned10=false
 
 function getDuration(){
   return Number(document.querySelector('input[name="time"]:checked').value) * 60000
 }
 
 function getActiveGroups(){
-  const a = []
-  if (el("g1").checked) a.push({ id:"g1", name:"Group 1" })
-  if (el("g2").checked) a.push({ id:"g2", name:"Group 2" })
-  if (el("g3").checked) a.push({ id:"g3", name:"Group 3" })
+  const a=[]
+  if(el("g1").checked) a.push({id:"g1",name:"Group 1"})
+  if(el("g2").checked) a.push({id:"g2",name:"Group 2"})
+  if(el("g3").checked) a.push({id:"g3",name:"Group 3"})
   return a
 }
 
 function fmt(ms){
-  const s = Math.max(0, Math.ceil(ms / 1000))
-  return String(Math.floor(s / 60)).padStart(2,"0") + ":" + String(s % 60).padStart(2,"0")
+  const s=Math.max(0,Math.ceil(ms/1000))
+  return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")
 }
 
 function speak(t){
   try{
-    if (!("speechSynthesis" in window)) return
+    if(!("speechSynthesis" in window)) return
     speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(t)
-    u.lang = "en-US"
+    const u=new SpeechSynthesisUtterance(t)
+    u.lang="en-US"
     speechSynthesis.speak(u)
-  } catch {}
-}
-
-function hideSplash(){
-  const splash = el("splash")
-  splash.classList.add("hide")
-  setTimeout(() => splash.style.display = "none", 350)
+  }catch{}
 }
 
 function start(){
-  order = getActiveGroups()
-  if (!order.length) return
-
-  running = true
-  idx = 0
+  order=getActiveGroups()
+  if(!order.length) return
+  running=true
+  idx=0
   document.body.classList.add("run")
-
   runSlot()
 }
 
 function runSlot(){
-  const c = order[idx]
-  const n = order[(idx + 1) % order.length]
+  const c=order[idx]
+  const n=order[(idx+1)%order.length]
+  warned60=warned10=false
 
-  warned60 = false
-  warned10 = false
+  stage.className="stage "+c.id
+  el("badge").textContent="RUNNING"
+  el("group").textContent=c.name
+  el("next").textContent="NEXT: "+n.name
 
-  stage.className = "stage " + c.id
-
-  el("badge").textContent = "RUNNING"
-  el("group").textContent = c.name
-  el("next").textContent = "NEXT: " + n.name
-
-  // PRO-style: say current group at slot start (no "get ready" here)
+  // PRO-style: say current group at start
   speak(c.name)
 
-  endAt = Date.now() + getDuration()
+  endAt=Date.now()+getDuration()
   tick()
-  timer = setInterval(tick, 250)
+  timer=setInterval(tick,250)
 }
 
 function tick(){
-  const left = endAt - Date.now()
-  el("time").textContent = fmt(left)
+  const l=endAt-Date.now()
+  el("time").textContent=fmt(l)
 
-  // 1 minute warning: get ready for NEXT group (PRO-style)
-  if (!warned60 && left <= 60000 && left > 59000){
-    warned60 = true
-    const next = order[(idx + 1) % order.length]
-    speak("One minute remaining. Get ready for " + next.name)
+  if(!warned60 && l<=60000 && l>59000){
+    warned60=true
+    const next=order[(idx+1)%order.length]
+    speak("One minute remaining. Get ready for "+next.name)
   }
-
-  // 10 seconds warning
-  if (!warned10 && left <= 10000 && left > 9000){
-    warned10 = true
+  if(!warned10 && l<=10000 && l>9000){
+    warned10=true
     speak("Ten seconds remaining")
   }
-
-  if (left <= 0){
+  if(l<=0){
     clearInterval(timer)
-    idx = (idx + 1) % order.length
+    idx=(idx+1)%order.length
     runSlot()
   }
 }
 
 function stop(){
-  running = false
+  running=false
   clearInterval(timer)
-
   document.body.classList.remove("run")
-  stage.className = "stage"
-
-  el("badge").textContent = "STOPPED"
-  el("group").textContent = "Stopped"
+  stage.className="stage"
+  el("badge").textContent="STOPPED"
+  el("group").textContent="Stopped"
 }
 
 function skip(){
-  if (!running) return
+  if(!running) return
   clearInterval(timer)
-  idx = (idx + 1) % order.length
+  idx=(idx+1)%order.length
   runSlot()
 }
 
-/* Splash: click logo to unlock voice and enter app */
-el("logoBtn").onclick = () => {
+/* Splash: click logo to unlock voice */
+el("logoBtn").onclick=()=>{
   speak("Voice enabled")
-  hideSplash()
+  el("splash").classList.add("hide")
+  setTimeout(()=>el("splash").style.display="none",350)
 }
 
-/* Edit start */
-el("start").onclick = start
+el("start").onclick=start
+el("stop").onclick=stop
+el("skip").onclick=skip
 
-/* Run controls */
-el("stop").onclick = stop
-el("skip").onclick = skip
-
-/* Init */
-el("time").textContent = fmt(getDuration())
+el("time").textContent=fmt(getDuration())
 </script>
 </body>
 </html>

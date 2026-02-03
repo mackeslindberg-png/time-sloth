@@ -2,7 +2,7 @@
    Safe update strategy (no stale cache)
 */
 
-const CACHE_NAME = "time-sloth-v3"; // bumpa till v4, v5 vid större uppdateringar
+const CACHE_NAME = "time-sloth-v4"; // bumpa till v4, v5 vid större uppdateringar
 
 self.addEventListener("install", event => {
   // Tvinga ny service worker att aktiveras direkt

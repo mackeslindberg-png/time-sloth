@@ -32,10 +32,13 @@
     body{
       background: var(--bg);
       color: var(--fg);
-      overflow:hidden;
+      overflow:auto; /* FIX: allow scroll */
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
+
+    /* FIX: lock scroll only when running */
+    body.run{ overflow:hidden; }
 
     .wrap{
       height:100%;
@@ -45,6 +48,10 @@
       display:flex;
       flex-direction:column;
       gap: 12px;
+
+      /* FIX: smoother scroll on mobile */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .topbar{
@@ -160,6 +167,7 @@
       position: relative;
       overflow:hidden;
       isolation: isolate;
+      min-height: 240px;
     }
 
     .stageLogo{
@@ -251,7 +259,7 @@
 
     /* Run view */
     body.run .panel{ display:none; }
-    body.run .wrap{ gap: 0; }
+    body.run .wrap{ gap: 0; overflow: hidden; }
     body.run .topbar{ display:none; }
     body.run .stage{
       flex: 1 1 auto;
@@ -650,10 +658,7 @@
     const importBtn = el("importBtn");
     const resetBtn = el("resetBtn");
 
-    // === GROUPS 1-6 ===
     const MODE_KEYS = ["Group 1","Group 2","Group 3","Group 4","Group 5","Group 6"];
-
-    // New storage key so old profiles won't conflict
     const LS_KEY = "ts_pro_profiles_groups_v2";
 
     const DEFAULT_MODE = {
@@ -684,16 +689,6 @@
     let activeId = store.activeId;
     let profile = store.profiles[activeId] || DEFAULT_PROFILE();
 
-    // Ensure voice always follows label on first load / reset:
-    // If user edits label later, voice can still be edited separately.
-    // But defaults are identical.
-    for (const k of MODE_KEYS){
-      if (!profile.modes?.[k]) continue;
-      if (!profile.modes[k].voice || String(profile.modes[k].voice).trim().length === 0){
-        profile.modes[k].voice = profile.modes[k].label || k;
-      }
-    }
-
     let intervalMin = clampInt(profile.durationMin, 2, 60);
     let durationMs = intervalMin * 60 * 1000;
 
@@ -709,7 +704,6 @@
     let warned30 = false;
     let warned10 = false;
 
-    let countdownTimer = null;
     let inCountdown = false;
 
     // Wake Lock
@@ -737,7 +731,9 @@
              voices.find(v => /en-GB/i.test(v.lang)) ||
              voices.find(v => /^en/i.test(v.lang)) || null;
     }
-    function speak(text){
+
+    // Fast, cancels previous
+    function speakNow(text){
       try{
         if (!("speechSynthesis" in window)) return;
         speechSynthesis.getVoices?.();
@@ -746,12 +742,33 @@
         u.lang = "en-US";
         const v = pickEnglishVoice();
         if (v) u.voice = v;
-        u.rate = 1.0;
-        u.pitch = 1.0;
-        u.volume = 1.0;
+        u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
         speechSynthesis.speak(u);
       } catch(e){}
     }
+
+    // Queued, does NOT cancel
+    function speakQueued(text){
+      return new Promise((resolve) => {
+        try{
+          if (!("speechSynthesis" in window)) return resolve();
+          speechSynthesis.getVoices?.();
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = "en-US";
+          const v = pickEnglishVoice();
+          if (v) u.voice = v;
+          u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
+          u.onend = () => resolve();
+          u.onerror = () => resolve();
+          speechSynthesis.speak(u);
+        } catch(e){
+          resolve();
+        }
+      });
+    }
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
     if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
@@ -767,8 +784,6 @@
       if (!Number.isFinite(n)) n = a;
       return Math.max(a, Math.min(b, Math.round(n)));
     }
-
-    // IMPORTANT: handle spaces now
     function cssKey(k){
       return String(k).replaceAll("/","_").replaceAll(" ","_");
     }
@@ -882,7 +897,6 @@
     }
 
     function voiceTextFor(key){
-      // Voice should follow label by default
       const v = (profile.modes[key]?.voice || profile.modes[key]?.label || key || "").trim();
       return v.length ? v : key;
     }
@@ -890,7 +904,6 @@
       return (profile.modes[key]?.label || key);
     }
 
-    // Rotation with weight
     function buildRotation(){
       const list = [];
       for (const k of MODE_KEYS){
@@ -952,10 +965,6 @@
     }
 
     function clearCountdown(){
-      if (countdownTimer){
-        clearTimeout(countdownTimer);
-        countdownTimer = null;
-      }
       inCountdown = false;
     }
 
@@ -970,41 +979,30 @@
       tickTimer = setInterval(tick, 80);
     }
 
-    // Soft start without voice overlap:
-    // Speak class + duration first, then countdown 3..2..1..Go
-    function doSoftStartThenRun(currentKey){
+    async function doSoftStartThenRun(currentKey){
       inCountdown = true;
       badge.textContent = "GET READY";
       subEl.textContent = "Soft start";
       resetCar();
       startCarEffects();
 
-      // NEW: say duration at slot start
-      speak(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
+      // Speak group + minutes fully, then do 3..2..1..Go
+      await speakQueued(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
+      await sleep(200);
 
       const steps = [3,2,1];
-      let i = 0;
-
-      const step = () => {
+      for (const n of steps){
         if (!running) return;
-        const n = steps[i];
         timeEl.textContent = "00:0" + n;
-        speak(String(n));
-        i++;
-        if (i < steps.length){
-          countdownTimer = setTimeout(step, 900);
-        } else {
-          countdownTimer = setTimeout(() => {
-            if (!running) return;
-            speak("Go");
-            clearCountdown();
-            beginHeatTimer();
-          }, 900);
-        }
-      };
+        await speakQueued(String(n));
+        await sleep(200);
+      }
 
-      timeEl.textContent = "00:03";
-      countdownTimer = setTimeout(step, 950);
+      if (!running) return;
+      await speakQueued("Go");
+
+      clearCountdown();
+      beginHeatTimer();
     }
 
     function startSlot(){
@@ -1026,8 +1024,7 @@
       if (profile.warnings.softStart){
         doSoftStartThenRun(currentKey);
       } else {
-        // NEW: say duration at slot start
-        speak(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
+        speakNow(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
         beginHeatTimer();
       }
     }
@@ -1045,16 +1042,16 @@
         if (profile.warnings.s60 && !warned60 && remaining <= 60*1000){
           warned60 = true;
           const nextKey = getNextKey();
-          speak(`One minute left. ${voiceTextFor(nextKey)}, get ready`);
+          speakNow(`One minute left. ${voiceTextFor(nextKey)}, get ready`);
           setBlink(true);
         }
         if (profile.warnings.s30 && !warned30 && remaining <= 30*1000){
           warned30 = true;
-          speak("Thirty seconds");
+          speakNow("Thirty seconds");
         }
         if (profile.warnings.s10 && !warned10 && remaining <= 10*1000){
           warned10 = true;
-          speak("Ten seconds");
+          speakNow("Ten seconds");
         }
       }
 
@@ -1072,7 +1069,7 @@
       stopCarEffects();
 
       const currentKey = rotation[idx];
-      speak(`${voiceTextFor(currentKey)} training end`);
+      speakNow(`${voiceTextFor(currentKey)} training end`);
 
       idx = (idx + 1) % rotation.length;
       startSlot();
@@ -1140,13 +1137,12 @@
       stopCarEffects();
 
       const currentKey = rotation[idx];
-      speak(`${voiceTextFor(currentKey)} training end`);
+      speakNow(`${voiceTextFor(currentKey)} training end`);
 
       idx = (idx + 1) % rotation.length;
       startSlot();
     }
 
-    // Profiles UI
     function rebuildProfileSelect(){
       profileSelect.innerHTML = "";
       const entries = Object.entries(store.profiles);
@@ -1165,14 +1161,6 @@
       if (!p) return;
       activeId = id;
       profile = p;
-
-      // ensure voice exists
-      for (const k of MODE_KEYS){
-        if (!profile.modes?.[k]) continue;
-        if (!profile.modes[k].voice || String(profile.modes[k].voice).trim().length === 0){
-          profile.modes[k].voice = profile.modes[k].label || k;
-        }
-      }
 
       intervalMin = clampInt(profile.durationMin, 2, 60);
       durationMs = intervalMin * 60 * 1000;
@@ -1216,11 +1204,7 @@
       for (const k of MODE_KEYS){
         base.modes[k] = { ...base.modes[k], ...((p.modes||{})[k] || {}) };
         base.modes[k].label = String(base.modes[k].label || k).slice(0,20) || k;
-
-        // if incoming voice is empty, follow label
-        const incomingVoice = String(base.modes[k].voice || "").trim();
-        base.modes[k].voice = (incomingVoice.length ? incomingVoice : (base.modes[k].label || k)).slice(0,60);
-
+        base.modes[k].voice = String(base.modes[k].voice || base.modes[k].label || k).slice(0,60);
         base.modes[k].weight = clampInt(base.modes[k].weight, 1, 20);
         base.modes[k].twoTone = !!base.modes[k].twoTone;
         base.modes[k].split = (base.modes[k].split === "tb") ? "tb" : "lr";
@@ -1250,7 +1234,6 @@
       setTimeout(() => setProfileToast(""), 1200);
     }
 
-    // Mode checks + settings
     function escapeHtml(s){
       return String(s ?? "")
         .replaceAll("&","&amp;")
@@ -1270,11 +1253,13 @@
 
         const wrap = document.createElement("div");
         wrap.className = "chip";
+        wrap.dataset.chip = cssKey(k); /* FIX: stable selector */
+
         wrap.innerHTML = `
           <label>
             <input type="checkbox" id="${id}" ${checked}>
             <span class="dot" style="background:${dotColor}"></span>
-            <span><b>${escapeHtml(profile.modes[k].label || k)}</b></span>
+            <span><b data-chip-label>${escapeHtml(profile.modes[k].label || k)}</b></span>
           </label>
         `;
         modeChecks.appendChild(wrap);
@@ -1354,12 +1339,13 @@
               const prevLabel = m.label;
               m.label = String(inp.value || "").trim().slice(0, 20) || k;
 
-              // if voice equals previous label (or empty), keep voice synced to label
+              // If voice was same as old label (or empty), keep voice synced to label
               const voiceTrim = String(m.voice || "").trim();
               if (!voiceTrim || voiceTrim === String(prevLabel || "").trim()){
                 m.voice = m.label;
+                const voiceInput = block.querySelector('input[data-field="voice"]');
+                if (voiceInput) voiceInput.value = m.voice;
               }
-
             } else if (field === "voice"){
               m.voice = String(inp.value || "").trim().slice(0, 60) || m.label || k;
             } else if (field === "weight"){
@@ -1372,8 +1358,19 @@
             }
 
             saveActiveProfile();
-            buildModeChecks();
-            buildModeSettings();
+
+            // FIX: update UI without rebuilding (keeps dropdown open + cursor stays)
+            const sum = block.querySelector("summary");
+            if (sum) sum.textContent = `${m.label || k} settings`;
+
+            const chip = document.querySelector(`[data-chip="${cssKey(k)}"]`);
+            if (chip){
+              const dot = chip.querySelector(".dot");
+              const txt = chip.querySelector("[data-chip-label]");
+              if (dot) dot.style.background = (m.c1 || "#999999");
+              if (txt) txt.textContent = (m.label || k);
+            }
+
             if (!running) refreshIdleView();
           });
         });
@@ -1412,7 +1409,6 @@
       resetCar();
     }
 
-    // Fullscreen
     async function toggleFullscreen(){
       try{
         if (!document.fullscreenElement){
@@ -1423,7 +1419,6 @@
       } catch(e){}
     }
 
-    // Events
     customMin.oninput = () => setDurationMinutes(customMin.value);
 
     w60.onchange = () => { profile.warnings.s60 = !!w60.checked; saveActiveProfile(); };
@@ -1437,7 +1432,7 @@
     skipRunBtn.onclick = skip;
 
     testVoiceBtn.onclick = () => {
-      speak("Test voice. time slash sloth pro.");
+      speakNow("Test voice. time slash sloth pro.");
       setToast("If you heard that, voice is working.");
     };
 
@@ -1524,7 +1519,7 @@
       setTimeout(() => { splash.style.display = "none"; }, 450);
     }
     enterBtn.onclick = () => {
-      speak("Voice enabled");
+      speakNow("Voice enabled");
       setTimeout(() => { try { speechSynthesis.getVoices?.(); } catch(e){} }, 200);
       hideSplash();
     };

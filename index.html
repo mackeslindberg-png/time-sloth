@@ -456,7 +456,7 @@
 
 <body>
   <div class="splash" id="splash">
-    <img src="../loggaml.png" class="splashLogo" alt="time/sloth logo">
+    <img src="../logo.png" class="splashLogo" alt="time/sloth logo">
     <div class="splashText">time/sloth PRO</div>
     <div class="splashSub">Tap Enter to enable voice (important on Android) and start.</div>
     <button class="splashBtn primary" id="enterBtn">Enter</button>
@@ -474,7 +474,7 @@
   <div class="wrap">
     <div class="topbar">
       <div class="title">
-        <img src="../loggaml.png" alt="time/sloth logo" class="logoTop">
+        <img src="../logo.png" alt="time/sloth logo" class="logoTop">
         <span>time/sloth PRO</span>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
@@ -560,7 +560,7 @@
 
     <!-- Stage -->
     <div class="stage" id="stage">
-      <img src="../loggaml.png" class="stageLogo" alt="time/sloth logo">
+      <img src="../logo.png" class="stageLogo" alt="time/sloth logo">
       <div class="badge" id="badge">IDLE</div>
 
       <div class="mode" id="mode">Select groups</div>
@@ -650,20 +650,32 @@
     const importBtn = el("importBtn");
     const resetBtn = el("resetBtn");
 
-    // === PRO uses the same concept as FREE: Group 1/2/3 ===
-    const MODE_KEYS = ["Group 1","Group 2","Group 3"];
+    // === GROUPS 1-6 ===
+    const MODE_KEYS = ["Group 1","Group 2","Group 3","Group 4","Group 5","Group 6"];
+
+    // New storage key so old FWD/GT profiles won't conflict
     const LS_KEY = "ts_pro_profiles_groups_v1";
 
     const DEFAULT_MODE = {
       "Group 1": { label:"Group 1", voice:"Group 1", weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
       "Group 2": { label:"Group 2", voice:"Group 2", weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00" },
-      "Group 3": { label:"Group 3", voice:"Group 3", weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" }
+      "Group 3": { label:"Group 3", voice:"Group 3", weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" },
+      "Group 4": { label:"Group 4", voice:"Group 4", weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40" },
+      "Group 5": { label:"Group 5", voice:"Group 5", weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f" },
+      "Group 6": { label:"Group 6", voice:"Group 6", weight:1, twoTone:false, split:"lr", c1:"#455a64", c2:"#1c262b" }
     };
 
     const DEFAULT_PROFILE = () => ({
       name: "Default",
       durationMin: 10,
-      enabled: { "Group 1":true, "Group 2":true, "Group 3":true },
+      enabled: {
+        "Group 1": true,
+        "Group 2": true,
+        "Group 3": true,
+        "Group 4": true,
+        "Group 5": true,
+        "Group 6": true
+      },
       warnings: { s60:true, s30:true, s10:true, softStart:true },
       modes: JSON.parse(JSON.stringify(DEFAULT_MODE))
     });
@@ -745,6 +757,8 @@
       if (!Number.isFinite(n)) n = a;
       return Math.max(a, Math.min(b, Math.round(n)));
     }
+
+    // IMPORTANT: handle spaces now
     function cssKey(k){
       return String(k).replaceAll("/","_").replaceAll(" ","_");
     }
@@ -945,6 +959,8 @@
       tickTimer = setInterval(tick, 80);
     }
 
+    // Soft start without voice overlap:
+    // Speak group name first, then after a short delay start 3..2..1
     function doSoftStartThenRun(currentKey){
       inCountdown = true;
       badge.textContent = "GET READY";
@@ -952,7 +968,6 @@
       resetCar();
       startCarEffects();
 
-      // Speak class name first, then start 3..2..1 (prevents overlap)
       speak(`${voiceTextFor(currentKey)}`);
 
       const steps = [3,2,1];
@@ -977,7 +992,7 @@
       };
 
       timeEl.textContent = "00:03";
-      countdownTimer = setTimeout(step, 950); // small delay so class name finishes
+      countdownTimer = setTimeout(step, 950);
     }
 
     function startSlot(){
@@ -1164,7 +1179,7 @@
     }
 
     function exportConfig(){
-      const payload = { v: 1, profile };
+      const payload = { v: 2, profile };
       const txt = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
       prompt("Copy this config string:", txt);
     }
@@ -1196,7 +1211,7 @@
       try{
         const raw = decodeURIComponent(escape(atob(txt)));
         const parsed = JSON.parse(raw);
-        if (!parsed || parsed.v !== 1 || !parsed.profile) throw new Error("bad");
+        if (!parsed || parsed.v !== 2 || !parsed.profile) throw new Error("bad");
         const id = uid();
         const p = sanitizeProfile(parsed.profile);
         store.profiles[id] = p;
@@ -1499,4 +1514,5 @@
   </script>
 </body>
 </html>
+
 

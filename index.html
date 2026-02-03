@@ -61,7 +61,7 @@ button{
 }
 
 button.primary{ background:#fff; color:#000; }
-button.danger{ background:rgba(255,80,80,.25); color:#fff; }
+button.danger{ background:rgba(255,80,80,.25); }
 button:disabled{ opacity:.4; }
 
 /* ---------- STAGE ---------- */
@@ -77,6 +77,17 @@ button:disabled{ opacity:.4; }
   text-align:center;
   transition:background 300ms ease;
   position:relative;
+  overflow:hidden;
+}
+
+.stageLogo{
+  position:absolute;
+  top:12px;
+  left:12px;
+  width:28px;
+  height:auto;
+  opacity:.25;
+  pointer-events:none;
 }
 
 .badge{ font-size:12px; opacity:.75; }
@@ -89,7 +100,7 @@ button:disabled{ opacity:.4; }
 .stage.g2{ background:#f08a1a; }
 .stage.g3{ background:#2e7d32; }
 
-/* ---------- RUN CONTROLS (only visible in run mode) ---------- */
+/* ---------- RUN CONTROLS ---------- */
 .runControls{
   position:fixed;
   left:14px;
@@ -104,7 +115,7 @@ body.run .runControls{
   grid-template-columns:1fr 1fr;
 }
 
-/* ---------- SPLASH: click logo to enable voice ---------- */
+/* ---------- SPLASH ---------- */
 .splash{
   position:fixed;
   inset:0;
@@ -120,6 +131,7 @@ body.run .runControls{
   transition:opacity 320ms ease;
 }
 .splash.hide{ opacity:0; pointer-events:none; }
+
 .splashLogo{
   width:min(260px,70vw);
   height:auto;
@@ -127,9 +139,19 @@ body.run .runControls{
   opacity:.95;
   cursor:pointer;
 }
-.splashText{ font-weight:900; letter-spacing:.4px; font-size:22px; opacity:.95; }
-.splashSub{ font-size:13px; opacity:.78; max-width:46ch; line-height:1.35; font-weight:700; }
 
+.splashText{
+  font-weight:900;
+  font-size:22px;
+}
+
+.splashSub{
+  font-size:13px;
+  opacity:.8;
+  max-width:44ch;
+  line-height:1.35;
+  font-weight:700;
+}
 </style>
 </head>
 
@@ -144,7 +166,7 @@ body.run .runControls{
 
 <div class="wrap">
 
-  <!-- GROUP SELECTION -->
+  <!-- GROUPS -->
   <div class="panel">
     <h2>Groups</h2>
     <label><input type="checkbox" id="g1" checked> Group 1</label>
@@ -159,13 +181,14 @@ body.run .runControls{
     <label><input type="radio" name="time" value="10"> 10 minutes</label>
   </div>
 
-  <!-- EDIT CONTROLS (hidden when running) -->
+  <!-- EDIT START -->
   <div class="panel">
     <button id="start" class="primary" style="width:100%;">Start</button>
   </div>
 
   <!-- STAGE -->
   <div class="stage" id="stage">
+    <img src="loggaml.png" class="stageLogo" alt="">
     <div class="badge" id="badge">IDLE</div>
     <div class="group" id="group">Ready</div>
     <div class="time" id="time">02:00</div>
@@ -194,31 +217,30 @@ let warned60 = false
 let warned10 = false
 
 function getDuration(){
-  return Number(document.querySelector('input[name="time"]:checked').value) * 60 * 1000
+  return Number(document.querySelector('input[name="time"]:checked').value) * 60000
 }
 
 function getActiveGroups(){
-  const arr = []
-  if(el("g1").checked) arr.push({ id:"g1", name:"Group 1" })
-  if(el("g2").checked) arr.push({ id:"g2", name:"Group 2" })
-  if(el("g3").checked) arr.push({ id:"g3", name:"Group 3" })
-  return arr
+  const a = []
+  if (el("g1").checked) a.push({ id:"g1", name:"Group 1" })
+  if (el("g2").checked) a.push({ id:"g2", name:"Group 2" })
+  if (el("g3").checked) a.push({ id:"g3", name:"Group 3" })
+  return a
 }
 
 function fmt(ms){
-  const s = Math.max(0,Math.ceil(ms/1000))
-  const m = Math.floor(s/60)
-  return String(m).padStart(2,"0")+":"+String(s%60).padStart(2,"0")
+  const s = Math.max(0, Math.ceil(ms / 1000))
+  return String(Math.floor(s / 60)).padStart(2,"0") + ":" + String(s % 60).padStart(2,"0")
 }
 
 function speak(t){
   try{
-    if(!("speechSynthesis" in window)) return
+    if (!("speechSynthesis" in window)) return
     speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(t)
-    u.lang="en-US"
+    u.lang = "en-US"
     speechSynthesis.speak(u)
-  }catch{}
+  } catch {}
 }
 
 function hideSplash(){
@@ -229,7 +251,7 @@ function hideSplash(){
 
 function start(){
   order = getActiveGroups()
-  if(order.length === 0) return
+  if (!order.length) return
 
   running = true
   idx = 0
@@ -239,20 +261,20 @@ function start(){
 }
 
 function runSlot(){
-  const current = order[idx]
-  const next = order[(idx+1) % order.length]
+  const c = order[idx]
+  const n = order[(idx + 1) % order.length]
 
   warned60 = false
   warned10 = false
 
-  stage.className = "stage " + current.id
+  stage.className = "stage " + c.id
 
-  el("badge").textContent = "GET READY"
-  el("group").textContent = current.name
-  el("next").textContent = "NEXT: " + next.name
+  el("badge").textContent = "RUNNING"
+  el("group").textContent = c.name
+  el("next").textContent = "NEXT: " + n.name
 
-  speak("Get ready")
-  setTimeout(() => speak(current.name), 600)
+  // PRO-style: say current group at slot start (no "get ready" here)
+  speak(c.name)
 
   endAt = Date.now() + getDuration()
   tick()
@@ -263,17 +285,20 @@ function tick(){
   const left = endAt - Date.now()
   el("time").textContent = fmt(left)
 
-  if(!warned60 && left <= 60000 && left > 59000){
+  // 1 minute warning: get ready for NEXT group (PRO-style)
+  if (!warned60 && left <= 60000 && left > 59000){
     warned60 = true
-    speak("One minute remaining")
+    const next = order[(idx + 1) % order.length]
+    speak("One minute remaining. Get ready for " + next.name)
   }
 
-  if(!warned10 && left <= 10000 && left > 9000){
+  // 10 seconds warning
+  if (!warned10 && left <= 10000 && left > 9000){
     warned10 = true
     speak("Ten seconds remaining")
   }
 
-  if(left <= 0){
+  if (left <= 0){
     clearInterval(timer)
     idx = (idx + 1) % order.length
     runSlot()
@@ -292,13 +317,13 @@ function stop(){
 }
 
 function skip(){
-  if(!running) return
+  if (!running) return
   clearInterval(timer)
   idx = (idx + 1) % order.length
   runSlot()
 }
 
-/* Splash: click logo to start app + unlock voice */
+/* Splash: click logo to unlock voice and enter app */
 el("logoBtn").onclick = () => {
   speak("Voice enabled")
   hideSplash()
@@ -311,10 +336,8 @@ el("start").onclick = start
 el("stop").onclick = stop
 el("skip").onclick = skip
 
-/* Init UI */
+/* Init */
 el("time").textContent = fmt(getDuration())
 </script>
 </body>
 </html>
-
-

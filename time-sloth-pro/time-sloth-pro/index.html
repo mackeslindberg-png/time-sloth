@@ -30,7 +30,7 @@
       font-size: calc(16px * var(--scale));
     }
 
-    /* FIX: allow scrolling in edit mode */
+    /* Scroll in edit mode */
     body{
       background: var(--bg);
       color: var(--fg);
@@ -39,12 +39,11 @@
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
-    /* keep lock in run mode */
+    /* Lock in run mode */
     body.run{
       overflow: hidden;
     }
 
-    /* FIX: allow content to exceed viewport */
     .wrap{
       min-height:100%;
       padding: 14px;
@@ -84,8 +83,6 @@
       border: 1px solid var(--outline);
       border-radius: 16px;
       padding: 12px;
-
-      /* NICE UX: better anchor/scroll behavior when jumping */
       scroll-margin-top: 80px;
     }
 
@@ -734,6 +731,7 @@
              voices.find(v => /en-GB/i.test(v.lang)) ||
              voices.find(v => /^en/i.test(v.lang)) || null;
     }
+
     function speak(text){
       try{
         if (!("speechSynthesis" in window)) return;
@@ -749,6 +747,36 @@
         speechSynthesis.speak(u);
       } catch(e){}
     }
+
+    /* NEW: helpers to avoid voice overlap in soft start */
+    function wait(ms){
+      return new Promise(res => setTimeout(res, ms));
+    }
+    function speakAsync(text){
+      return new Promise((resolve) => {
+        try{
+          if (!("speechSynthesis" in window)) return resolve();
+          speechSynthesis.getVoices?.();
+          speechSynthesis.cancel();
+
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = "en-US";
+          const v = pickEnglishVoice();
+          if (v) u.voice = v;
+          u.rate = 1.0;
+          u.pitch = 1.0;
+          u.volume = 1.0;
+
+          u.onend = () => resolve();
+          u.onerror = () => resolve();
+
+          speechSynthesis.speak(u);
+        } catch(e){
+          resolve();
+        }
+      });
+    }
+
     if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
@@ -973,38 +1001,35 @@
       tickTimer = setInterval(tick, 80);
     }
 
-    function doSoftStartThenRun(currentKey){
+    /* UPDATED: no voice overlap */
+    async function doSoftStartThenRun(currentKey){
       inCountdown = true;
       badge.textContent = "GET READY";
       subEl.textContent = "Soft start";
       resetCar();
       startCarEffects();
 
-      speak(`${voiceTextFor(currentKey)}`);
+      // 1) Say class name, wait until finished
+      await speakAsync(`${voiceTextFor(currentKey)}`);
 
+      // small buffer (helps Android)
+      await wait(150);
+
+      // 2) 3..2..1 without overlap
       const steps = [3,2,1];
-      let i = 0;
-
-      const step = () => {
+      for (const n of steps){
         if (!running) return;
-        const n = steps[i];
         timeEl.textContent = "00:0" + n;
-        speak(String(n));
-        i++;
-        if (i < steps.length){
-          countdownTimer = setTimeout(step, 900);
-        } else {
-          countdownTimer = setTimeout(() => {
-            if (!running) return;
-            speak("Go");
-            clearCountdown();
-            beginHeatTimer();
-          }, 900);
-        }
-      };
+        await speakAsync(String(n));
+        await wait(150);
+      }
 
-      timeEl.textContent = "00:03";
-      countdownTimer = setTimeout(step, 450);
+      if (!running) return;
+
+      // 3) Go and start timer
+      await speakAsync("Go");
+      clearCountdown();
+      beginHeatTimer();
     }
 
     function startSlot(){
@@ -1149,7 +1174,7 @@
     function rebuildProfileSelect(){
       profileSelect.innerHTML = "";
       const entries = Object.entries(store.profiles);
-      entries.sort((a,b) => String(a[1]?.name||"").localeCompare(String(b[1]?.name||"")));
+      entries.sort((a,b) => String(a[1]?.name||"").localeCompare(String(a[1]?.name||"")));
       for (const [id, p] of entries){
         const opt = document.createElement("option");
         opt.value = id;
@@ -1257,7 +1282,6 @@
       if (sum) sum.textContent = `${profile.modes[k].label || k} settings`;
     }
 
-    // Mode checks + settings
     function escapeHtml(s){
       return String(s ?? "")
         .replaceAll("&","&amp;")
@@ -1294,14 +1318,12 @@
         `;
         modeChecks.appendChild(wrap);
 
-        // checkbox logic
         el(id).onchange = () => {
           profile.enabled[k] = el(id).checked;
           saveActiveProfile();
           if (!running) refreshIdleView();
         };
 
-        // drag & drop
         wrap.addEventListener("dragstart", (e) => {
           if (running) { e.preventDefault(); return; }
           dragFromKey = k;
@@ -1348,7 +1370,6 @@
           profile.order = ord;
           saveActiveProfile();
 
-          // rebuild once to render new order
           buildModeChecks();
           buildModeSettings();
           if (!running) refreshIdleView();
@@ -1437,7 +1458,6 @@
 
             saveActiveProfile();
 
-            // no rebuild here (keeps focus on mobile)
             updateModeChip(k);
             updateModeSummary(block, k);
 

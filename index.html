@@ -1,1007 +1,263 @@
 <!doctype html>
 <html lang="sv">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>time/sloth</title>
-  <style>
-    :root{
-      --bg: #1b1b1b;
-      --fg: #ffffff;
-      --card: rgba(0,0,0,.18);
-      --btn: rgba(255,255,255,.14);
-      --btn2: rgba(255,255,255,.22);
-      --outline: rgba(255,255,255,.22);
-      --black: #000000;
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>time/sloth</title>
 
-    *{ box-sizing: border-box; }
-    html,body{ height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    body{
-      background: var(--bg);
-      color: var(--fg);
-      overflow:hidden;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
-    }
+<style>
+:root{
+  --bg:#1b1b1b;
+  --fg:#ffffff;
+  --card:rgba(0,0,0,.25);
+  --btn:rgba(255,255,255,.18);
+}
 
-    .wrap{
-      height:100%;
-      padding: 14px;
-      padding-top: calc(14px + env(safe-area-inset-top));
-      padding-bottom: calc(14px + env(safe-area-inset-bottom));
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
-    }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:system-ui}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  overflow:hidden;
+}
 
-    .topbar{
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      justify-content:space-between;
-    }
+.wrap{
+  height:100%;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
 
-    .title{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      font-weight:700;
-      letter-spacing:.2px;
-      font-size: 16px;
-      opacity:.95;
-    }
+.panel{
+  background:var(--card);
+  border-radius:16px;
+  padding:12px;
+}
 
-    .logoTop{
-      height: 28px;
-      width: auto;
-      display:block;
-    }
+h2{
+  margin:0 0 8px 0;
+  font-size:16px;
+}
 
-    .panel{
-      background: var(--card);
-      border: 1px solid var(--outline);
-      border-radius: 16px;
-      padding: 12px;
-    }
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+}
 
-    .grid{ display:grid; gap: 10px; }
-    .grid.cols2{ grid-template-columns: 1fr 1fr; }
+select,button{
+  font:inherit;
+  border-radius:14px;
+  border:none;
+  padding:12px;
+}
 
-    .chip{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 8px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 14px;
-      padding: 12px 12px;
-      min-height: 50px;
-    }
-    .chip label{ display:flex; align-items:center; gap:10px; width:100%; cursor:pointer; }
-    .chip input{ transform: scale(1.25); }
+select{
+  flex:1;
+  background:#000;
+  color:#fff;
+}
 
-    .dot{
-      width: 14px; height: 14px; border-radius: 50%;
-      border: 1px solid rgba(0,0,0,.25);
-      flex: 0 0 auto;
-    }
+button{
+  background:var(--btn);
+  color:#fff;
+  font-weight:700;
+}
 
-    .btnrow{ display:grid; gap: 10px; }
-    .btnrow.intervals{ grid-template-columns: repeat(4, 1fr); }
-    .btnrow.controls{ grid-template-columns: 1fr 1fr; }
-    .btnrow.misc{ grid-template-columns: 1fr; }
+button.primary{
+  background:#fff;
+  color:#000;
+}
 
-    button{
-      font: inherit;
-      border: 1px solid rgba(255,255,255,.18);
-      background: var(--btn);
-      color: var(--fg);
-      border-radius: 16px;
-      padding: 14px 12px;
-      font-weight: 700;
-      cursor:pointer;
-      min-height: 54px;
-    }
-    button:active{ transform: translateY(1px); }
-    button.primary{ background: var(--btn2); border-color: rgba(255,255,255,.28); }
-    button.danger{ background: rgba(255,60,60,.22); border-color: rgba(255,60,60,.35); }
-    button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+.stage{
+  flex:1;
+  border-radius:20px;
+  background:#000;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  text-align:center;
+}
 
-    .stage{
-      flex: 1 1 auto;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      border-radius: 22px;
-      border: 1px solid rgba(0,0,0,.25);
-      background: rgba(0,0,0,.15);
-      padding: 18px;
-      text-align:center;
-      gap: 10px;
-      position: relative;
-      overflow:hidden;
-      isolation: isolate;
-    }
+.badge{
+  font-size:12px;
+  opacity:.7;
+}
 
-    /* logo 3x larger */
-    .stageLogo{
-      position:absolute;
-      top: 12px;
-      left: 12px;
-      height: 120px;
-      width: auto;
-      z-index: 5;
-      pointer-events:none;
-    }
+.mode{
+  font-size:40px;
+  font-weight:900;
+}
 
-    .mode{
-      font-size: clamp(34px, 7vw, 56px);
-      font-weight: 900;
-      letter-spacing: .6px;
-      line-height: 1.05;
-      z-index: 2;
-    }
+.time{
+  font-size:64px;
+  font-weight:900;
+}
 
-    .time{
-      font-size: clamp(46px, 9vw, 72px);
-      font-weight: 900;
-      letter-spacing: 1px;
-      line-height: 1;
-      z-index: 2;
-    }
+.next{
+  font-size:18px;
+  opacity:.8;
+}
 
-    /* NEXT UP moved down & italic */
-    .next{
-      margin-top: clamp(12px, 4vh, 28px);
-      font-size: clamp(16px, 3.2vw, 22px);
-      font-weight: 900;
-      opacity: .95;
-      letter-spacing: .4px;
-      font-style: italic;
-      z-index: 2;
-    }
-
-    .sub{
-      font-size: 13px;
-      opacity: .85;
-      line-height: 1.35;
-      z-index: 2;
-    }
-
-    /* Blink only mode + time (NOT next) */
-    .blinkMode{ animation: blink 0.85s step-end infinite; color: var(--black) !important; text-shadow:none !important; }
-    .blinkTime{ animation: blink 0.85s step-end infinite; color: var(--black) !important; text-shadow:none !important; }
-    @keyframes blink{ 50%{ opacity: .15; } }
-
-    .badge{
-      position:absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0,0,0,.22);
-      border: 1px solid rgba(0,0,0,.18);
-      color: rgba(255,255,255,.9);
-      border-radius: 999px;
-      padding: 8px 10px;
-      font-weight: 800;
-      font-size: 12px;
-      letter-spacing: .3px;
-      z-index: 3;
-    }
-
-    .hint{ font-size: 12px; opacity: .8; }
-    .row{
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items:center;
-    }
-    .small{ font-size: 12px; opacity:.78; }
-    .toast{ margin-top: 6px; font-size: 12px; opacity: .9; min-height: 16px; }
-
-    .bg-fwd{ background: #1e5aa8; }
-    .bg-touring{ background: #f08a1a; }
-    .bg-112{ background: #6a1b9a; }
-    .bg-mod{ background: #c62828; }
-    .bg-beginner{ background: #ffffff; }
-    .bg-beginner .mode,
-    .bg-beginner .time,
-    .bg-beginner .next,
-    .bg-beginner .sub,
-    .bg-beginner .badge{ color: #111; }
-    .bg-beginner .badge{
-      background: rgba(0,0,0,.08);
-      border-color: rgba(0,0,0,.10);
-      color: rgba(0,0,0,.8);
-    }
-
-    .splash{
-      position:fixed;
-      inset:0;
-      background: #0f0f0f;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      gap: 14px;
-      z-index: 999;
-      opacity: 1;
-      transition: opacity 420ms ease;
-      padding: 18px;
-      text-align:center;
-    }
-    .splash.hide{ opacity:0; pointer-events:none; }
-    .splashLogo{ width: min(260px, 70vw); height:auto; display:block; }
-    .splashText{ font-weight: 900; letter-spacing: .6px; font-size: 22px; opacity: .95; }
-    .splashSub{ font-size: 13px; opacity: .78; max-width: 46ch; line-height: 1.35; }
-    .splashBtn{ margin-top: 8px; width: min(360px, 92vw); }
-
-    /* RUN VIEW fullscreen */
-    body.run .panel{ display:none; }
-    body.run .wrap{ gap: 0; }
-    body.run .topbar{ display:none; }
-    body.run .stage{
-      flex: 1 1 auto;
-      border-radius: 22px;
-      margin: 0;
-      padding-top: calc(18px + env(safe-area-inset-top));
-      padding-bottom: calc(18px + env(safe-area-inset-bottom));
-    }
-
-    /* Run controls overlay: Stop + Skip */
-    .runControls{
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: calc(12px + env(safe-area-inset-bottom));
-      display:none;
-      z-index: 1000;
-      gap: 10px;
-    }
-    body.run .runControls{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-    }
-    .runControls button{
-      min-height: 58px;
-      border-radius: 18px;
-      font-size: 16px;
-    }
-
-    /* Slider */
-    .sliderRow{
-      margin-top: 10px;
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 14px;
-      padding: 10px 12px;
-    }
-    .sliderRow input[type="range"]{ width: 100%; }
-    .sliderVal{
-      min-width: 56px;
-      text-align:right;
-      font-weight: 900;
-      opacity: .95;
-      font-size: 12px;
-    }
-
-    /* TRACK (flags + lane + car) */
-    .track{
-      position:absolute;
-      left: 14px;
-      right: 14px;
-      bottom: 100px;
-      height: 28px;
-      z-index: 4;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      pointer-events:none;
-      opacity: .95;
-    }
-
-    .flag svg{
-      color: rgba(255,255,255,.95);
-      filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
-    }
-    .bg-beginner .flag svg{
-      color: rgba(0,0,0,.85);
-      filter: none;
-    }
-
-    .lane{
-      position: relative;
-      flex: 1 1 auto;
-      height: 8px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.18);
-      overflow: visible;
-    }
-    .bg-beginner .lane{ background: rgba(0,0,0,.10); }
-
-    .car{
-      position:absolute;
-      top: 50%;
-      left: 0%;
-      transform: translate(-50%, -50%);
-      color: rgba(255,255,255,.95);
-      z-index: 2;
-      will-change: left, transform, filter;
-      filter:
-        drop-shadow(0 2px 0 rgba(0,0,0,.25))
-        drop-shadow(0 0 10px rgba(255,255,255,.18));
-    }
-    .bg-beginner .car{
-      color: rgba(0,0,0,.85);
-      filter: none;
-    }
-
-    .car.running{
-      filter:
-        drop-shadow(0 2px 0 rgba(0,0,0,.25))
-        drop-shadow(0 0 12px rgba(255,255,255,.25))
-        drop-shadow(0 0 22px rgba(255,255,255,.18));
-    }
-    .bg-beginner .car.running{
-      filter:
-        drop-shadow(0 0 10px rgba(0,0,0,.14));
-    }
-
-    /* wobble while running */
-    .car.running .carSvg{
-      transform-origin: 50% 70%;
-      animation: wobble 260ms ease-in-out infinite;
-    }
-    @keyframes wobble{
-      0%   { transform: rotate(-3deg) translateY(0px); }
-      50%  { transform: rotate(3deg)  translateY(-1px); }
-      100% { transform: rotate(-3deg) translateY(0px); }
-    }
-
-    /* bounce on start */
-    .car.bounce{
-      animation: bounce 520ms cubic-bezier(.2,.8,.2,1) 1;
-    }
-    @keyframes bounce{
-      0%   { transform: translate(-50%,-50%) scale(1); }
-      30%  { transform: translate(-50%,-70%) scale(1.06); }
-      55%  { transform: translate(-50%,-45%) scale(.98); }
-      75%  { transform: translate(-50%,-58%) scale(1.02); }
-      100% { transform: translate(-50%,-50%) scale(1); }
-    }
-
-    /* smoke trail */
-    .smoke{
-      position:absolute;
-      left:-6px;
-      top:50%;
-      transform: translate(-100%,-50%);
-      width: 46px;
-      height: 26px;
-      pointer-events:none;
-      overflow: visible;
-      z-index:1;
-      opacity: 0;
-    }
-    .car.running .smoke{ opacity: 1; }
-
-    .puff{
-      position:absolute;
-      right: 0;
-      top: 50%;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.55);
-      transform: translateY(-50%);
-      animation: puff 520ms ease-out infinite;
-      opacity: 0;
-    }
-    .puff.p2{ animation-delay: 140ms; width: 8px; height: 8px; background: rgba(255,255,255,.45); }
-    .puff.p3{ animation-delay: 280ms; width: 12px; height: 12px; background: rgba(255,255,255,.35); }
-
-    @keyframes puff{
-      0%{
-        transform: translate(0,-50%) scale(.7);
-        opacity: 0;
-      }
-      15%{ opacity: .75; }
-      100%{
-        transform: translate(-40px,-50%) scale(1.6);
-        opacity: 0;
-      }
-    }
-
-    .bg-beginner .puff{
-      background: rgba(0,0,0,.30);
-    }
-    .bg-beginner .puff.p2{ background: rgba(0,0,0,.24); }
-    .bg-beginner .puff.p3{ background: rgba(0,0,0,.18); }
-  </style>
+.runbar{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+</style>
 </head>
 
 <body>
-  <div class="splash" id="splash">
-    <img src="logo.png" class="splashLogo" alt="time/sloth logo">
-    <div class="splashText">time/sloth</div>
-    <div class="splashSub">Tap Enter to enable voice (important on Android) and start.</div>
-    <button class="splashBtn primary" id="enterBtn">Enter</button>
-  </div>
+<div class="wrap">
 
-  <div class="runControls" id="runControls">
-    <button id="skipRun">Skip</button>
-    <button id="stopRun" class="danger">Stop</button>
-  </div>
+  <div class="panel">
+    <h2>Groups (Free)</h2>
 
-  <div class="wrap">
-    <div class="topbar">
-      <div class="title">
-        <img src="logo.png" alt="time/sloth logo" class="logoTop">
-        <span>time/sloth</span>
-      </div>
-      <div class="small" id="status">Ready</div>
+    <div class="row">
+      <span>Group 1</span>
+      <select id="g1"></select>
     </div>
 
-    <div class="panel">
-      <div class="row">
-        <div class="small"><b>Modes</b> (rotation in shown order)</div>
-        <div class="small">Interval: <b id="intervalLabel">10 min</b></div>
-      </div>
-
-      <div class="grid cols2" style="margin-top:10px;">
-        <div class="chip">
-          <label>
-            <input type="checkbox" id="mFWD" checked>
-            <span class="dot" style="background:#1e5aa8"></span>
-            <span><b>FWD</b></span>
-          </label>
-        </div>
-
-        <div class="chip">
-          <label>
-            <input type="checkbox" id="mTouring" checked>
-            <span class="dot" style="background:#f08a1a"></span>
-            <span><b>Touring</b></span>
-          </label>
-        </div>
-
-        <div class="chip">
-          <label>
-            <input type="checkbox" id="m112" checked>
-            <span class="dot" style="background:#6a1b9a"></span>
-            <span><b>1/12</b></span>
-          </label>
-        </div>
-
-        <div class="chip">
-          <label>
-            <input type="checkbox" id="mMod" checked>
-            <span class="dot" style="background:#c62828"></span>
-            <span><b>Mod</b></span>
-          </label>
-        </div>
-
-        <div class="chip" style="grid-column: 1 / -1;">
-          <label>
-            <input type="checkbox" id="mBeginner" checked>
-            <span class="dot" style="background:#ffffff"></span>
-            <span><b>Beginner</b></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="btnrow intervals" style="margin-top:10px;">
-        <button id="b35">35 s</button>
-        <button id="b5">5 min</button>
-        <button id="b10" class="primary">10 min</button>
-        <button id="b15">15 min</button>
-      </div>
-
-      <div class="sliderRow">
-        <div class="small"><b>Custom</b></div>
-        <input type="range" id="customMin" min="1" max="15" step="1" value="10">
-        <div class="sliderVal" id="customLabel">10 min</div>
-      </div>
-
-      <div class="btnrow controls" style="margin-top:10px;">
-        <button id="start" class="primary">Start</button>
-        <button id="stop" class="danger" disabled>Stop</button>
-      </div>
-
-      <div class="btnrow misc" style="margin-top:10px;">
-        <button id="testVoice">Test Voice</button>
-      </div>
-
-      <div class="toast" id="toast"></div>
-      <div class="hint">Wake lock funkar bäst i Chrome på Android. Kontrollera även “Media volume” och att sidan inte är muted.</div>
+    <div class="row">
+      <span>Group 2</span>
+      <select id="g2"></select>
     </div>
 
-    <div class="stage" id="stage">
-      <img src="logo.png" class="stageLogo" alt="time/sloth logo">
-      <div class="badge" id="badge">IDLE</div>
-
-      <div class="mode" id="mode">Select modes</div>
-      <div class="time" id="time">--:--</div>
-      <div class="next" id="next">NEXT UP: --</div>
-      <div class="sub" id="sub">Start to begin rotation</div>
-
-      <!-- Track -->
-      <div class="track" aria-hidden="true">
-        <!-- Start flag -->
-        <div class="flag" title="Start">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path fill="currentColor" d="M6 2h2v20H6z"/>
-            <path fill="currentColor" d="M8 3h10l-2 3 2 3H8z"/>
-          </svg>
-        </div>
-
-        <!-- Lane + car -->
-        <div class="lane">
-          <div class="car" id="car" title="Car">
-            <div class="smoke" aria-hidden="true">
-              <div class="puff p1"></div>
-              <div class="puff p2"></div>
-              <div class="puff p3"></div>
-            </div>
-            <svg class="carSvg" viewBox="0 0 64 32" width="28" height="14" aria-hidden="true">
-              <path fill="currentColor"
-                d="M10 22h44c3 0 5-2 5-5v-5c0-2-1-3-3-3h-7l-6-6H21l-6 6H8c-2 0-3 1-3 3v5c0 3 2 5 5 5z"/>
-              <circle fill="currentColor" cx="20" cy="24" r="4"/>
-              <circle fill="currentColor" cx="46" cy="24" r="4"/>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Finish flag -->
-        <div class="flag" title="Finish">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path fill="currentColor" d="M6 2h2v20H6z"/>
-            <path fill="currentColor" d="M8 4h12v10H8z"/>
-          </svg>
-        </div>
-      </div>
+    <div class="row">
+      <span>Group 3</span>
+      <select id="g3"></select>
     </div>
   </div>
 
-  <script>
-    const MODE_ORDER = [
-      { key: "FWD",      cls: "bg-fwd",      voice: "Front wheel drive class" },
-      { key: "Touring",  cls: "bg-touring",  voice: "Touring stock class" },
-      { key: "1/12",     cls: "bg-112",      voice: "One twelve class" },
-      { key: "Mod",      cls: "bg-mod",      voice: "Modify class" },
-      { key: "Beginner", cls: "bg-beginner", voice: "Beginner and rookies" },
-    ];
+  <div class="panel">
+    <div class="runbar">
+      <button id="start" class="primary">Start</button>
+      <button id="stop" disabled>Stop</button>
+    </div>
+  </div>
 
-    const el = (id) => document.getElementById(id);
+  <div class="stage">
+    <div class="badge" id="badge">IDLE</div>
+    <div class="mode" id="mode">Ready</div>
+    <div class="time" id="time">10:00</div>
+    <div class="next" id="next">NEXT UP: --</div>
+  </div>
 
-    const splash = el("splash");
-    const enterBtn = el("enterBtn");
+</div>
 
-    const stage = el("stage");
-    const badge = el("badge");
-    const statusEl = el("status");
-    const toastEl = el("toast");
+<script>
+const MODES = {
+  FWD:"FWD",
+  Touring:"Touring",
+  "1/12":"1/12",
+  Mod:"Mod",
+  GT:"GT",
+  Kidz:"Kidz"
+};
 
-    const modeEl = el("mode");
-    const timeEl = el("time");
-    const nextEl = el("next");
-    const subEl = el("sub");
+const GROUPS = {
+  g1:"FWD",
+  g2:"Touring",
+  g3:"GT"
+};
 
-    const carEl = el("car");
+const DURATION = 10 * 60 * 1000;
 
-    const mFWD = el("mFWD");
-    const mTouring = el("mTouring");
-    const m112 = el("m112");
-    const mMod = el("mMod");
-    const mBeginner = el("mBeginner");
+let order = ["g1","g2","g3"];
+let idx = 0;
+let running = false;
+let timer = null;
+let endAt = 0;
 
-    const b35 = el("b35");
-    const b5 = el("b5");
-    const b10 = el("b10");
-    const b15 = el("b15");
-    const intervalLabel = el("intervalLabel");
+const el = id => document.getElementById(id);
 
-    const customMin = el("customMin");
-    const customLabel = el("customLabel");
-
-    const startBtn = el("start");
-    const stopBtn  = el("stop");
-    const stopRunBtn = el("stopRun");
-    const skipRunBtn = el("skipRun");
-    const testVoiceBtn = el("testVoice");
-
-    let running = false;
-    let rotation = [];
-    let idx = 0;
-
-    // Duration: either seconds (35s) or minutes (1-15)
-    let durationMs = 10 * 60 * 1000;
-
-    let slotStartedAt = 0;
-    let slotEndsAt = 0;
-
-    let tickTimer = null;
-    let warnedAtOneMinute = false;
-
-    // Wake Lock
-    let wakeLock = null;
-    async function requestWakeLock(){
-      try{
-        if (!("wakeLock" in navigator)) { setToast("Wake Lock not supported on this device/browser."); return; }
-        wakeLock = await navigator.wakeLock.request("screen");
-      } catch (e){}
+function populate(){
+  for(const g of ["g1","g2","g3"]){
+    const sel = el(g);
+    sel.innerHTML = "";
+    for(const k in MODES){
+      const o = document.createElement("option");
+      o.value = k;
+      o.textContent = MODES[k];
+      sel.appendChild(o);
     }
-    async function releaseWakeLock(){
-      try{ if (wakeLock){ await wakeLock.release(); wakeLock = null; } } catch(e){}
-    }
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible" && running) requestWakeLock();
-    });
-
-    function setToast(msg){ toastEl.textContent = msg || ""; }
-
-    function fmtMMSS(ms){
-      const total = Math.max(0, Math.ceil(ms / 1000));
-      const m = Math.floor(total / 60);
-      const s = total % 60;
-      return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
-    }
-
-    function fmtIntervalLabel(ms){
-      const totalSec = Math.max(1, Math.round(ms / 1000));
-      if (totalSec < 60) return `${totalSec} s`;
-      const min = Math.round(totalSec / 60);
-      return `${min} min`;
-    }
-
-    function voiceForKey(key){
-      const m = MODE_ORDER.find(x => x.key === key);
-      return m ? m.voice : key;
-    }
-
-    function buildRotation(){
-      const selected = new Set();
-      if (mFWD.checked) selected.add("FWD");
-      if (mTouring.checked) selected.add("Touring");
-      if (m112.checked) selected.add("1/12");
-      if (mMod.checked) selected.add("Mod");
-      if (mBeginner.checked) selected.add("Beginner");
-      rotation = MODE_ORDER.filter(m => selected.has(m.key));
-      return rotation;
-    }
-
-    function applyStageBg(cls){
-      for (const m of MODE_ORDER) stage.classList.remove(m.cls);
-      if (cls) stage.classList.add(cls);
-    }
-
-    function getNextModeKey(){
-      if (rotation.length === 0) return "--";
-      if (rotation.length === 1) return rotation[0].key;
-      return rotation[(idx + 1) % rotation.length].key;
-    }
-
-    // Blink only mode + time
-    function setBlink(on){
-      if (on){
-        modeEl.classList.add("blinkMode");
-        timeEl.classList.add("blinkTime");
-      } else {
-        modeEl.classList.remove("blinkMode");
-        timeEl.classList.remove("blinkTime");
-      }
-    }
-
-    // Car progress LEFT -> RIGHT (elapsed-based)
-    function setCarProgress(now){
-      const elapsed = Math.max(0, Math.min(durationMs, now - slotStartedAt));
-      const pct = (elapsed / durationMs) * 100; // 0 -> 100
-      carEl.style.left = pct.toFixed(2) + "%";
-    }
-    function resetCar(){
-      carEl.style.left = "0%";
-      carEl.classList.remove("running");
-      carEl.classList.remove("bounce");
-    }
-    function startCarEffects(){
-      carEl.classList.add("running");
-      // restart bounce reliably
-      carEl.classList.remove("bounce");
-      void carEl.offsetWidth;
-      carEl.classList.add("bounce");
-      setTimeout(() => carEl.classList.remove("bounce"), 650);
-    }
-    function stopCarEffects(){
-      carEl.classList.remove("running");
-      carEl.classList.remove("bounce");
-    }
-
-    // TTS
-    function pickEnglishVoice(){
-      const voices = speechSynthesis.getVoices?.() || [];
-      return voices.find(v => /en-US/i.test(v.lang)) ||
-             voices.find(v => /en-GB/i.test(v.lang)) ||
-             voices.find(v => /^en/i.test(v.lang)) || null;
-    }
-    function speak(text){
-      try{
-        if (!("speechSynthesis" in window)) return;
-        speechSynthesis.getVoices?.();
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "en-US";
-        const v = pickEnglishVoice();
-        if (v) u.voice = v;
-        u.rate = 1.0;
-        u.pitch = 1.0;
-        u.volume = 1.0;
-        speechSynthesis.speak(u);
-      } catch(e){}
-    }
-    if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
-    }
-
-    function updateIntervalUI(){
-      const label = fmtIntervalLabel(durationMs);
-      intervalLabel.textContent = label;
-      customLabel.textContent = label;
-
-      b35.classList.toggle("primary", Math.round(durationMs/1000) === 35);
-      b5.classList.toggle("primary", durationMs === 5 * 60 * 1000);
-      b10.classList.toggle("primary", durationMs === 10 * 60 * 1000);
-      b15.classList.toggle("primary", durationMs === 15 * 60 * 1000);
-    }
-
-    function setDurationMs(ms, { syncSlider = true } = {}){
-      durationMs = ms;
-      updateIntervalUI();
-
-      if (syncSlider){
-        const sec = Math.round(ms / 1000);
-        if (sec % 60 === 0){
-          const min = sec / 60;
-          if (min >= 1 && min <= 15) customMin.value = String(min);
-        }
-      }
-
-      if (!running) timeEl.textContent = fmtMMSS(durationMs);
-      setToast(`Interval set to ${fmtIntervalLabel(durationMs)}.`);
-    }
-
-    b35.onclick  = () => setDurationMs(35 * 1000);
-    b5.onclick   = () => setDurationMs(5 * 60 * 1000);
-    b10.onclick  = () => setDurationMs(10 * 60 * 1000);
-    b15.onclick  = () => setDurationMs(15 * 60 * 1000);
-
-    customMin.oninput = () => {
-      const min = Number(customMin.value || 10);
-      setDurationMs(min * 60 * 1000, { syncSlider: false });
-    };
-
-    function refreshIdleView(){
-      const rot = buildRotation();
-      if (rot.length === 0){
-        badge.textContent = "IDLE";
-        modeEl.textContent = "Select modes";
-        timeEl.textContent = "--:--";
-        nextEl.textContent = "NEXT UP: --";
-        subEl.textContent = "Pick at least one mode.";
-        applyStageBg(null);
-        setBlink(false);
-        startBtn.disabled = true;
-        resetCar();
-        return;
-      }
-
-      startBtn.disabled = false;
-      const first = rot[0];
-      const nextKey = (rot.length === 1) ? first.key : rot[1].key;
-
-      badge.textContent = "IDLE";
-      modeEl.textContent = first.key;
-      timeEl.textContent = fmtMMSS(durationMs);
-      nextEl.textContent = `NEXT UP: ${nextKey}`;
-      subEl.textContent = "Press Start to begin.";
-      applyStageBg(first.cls);
-      setBlink(false);
-      resetCar();
-    }
-
-    mFWD.onchange = mTouring.onchange = m112.onchange = mMod.onchange = mBeginner.onchange = () => {
-      if (!running) refreshIdleView();
-    };
-
-    function startSlot(){
-      const current = rotation[idx];
-      const nextKey = getNextModeKey();
-
-      warnedAtOneMinute = false;
-      setBlink(false);
-
-      applyStageBg(current.cls);
-      badge.textContent = "RUNNING";
-      statusEl.textContent = `Running: ${current.key}`;
-
-      modeEl.textContent = current.key;
-      nextEl.textContent = `NEXT UP: ${nextKey}`;
-      subEl.textContent = `${fmtIntervalLabel(durationMs)} slot`;
-
-      slotStartedAt = Date.now();
-      slotEndsAt = slotStartedAt + durationMs;
-
-      resetCar();
-      startCarEffects();
-
-      speak(`${current.voice}, ${fmtIntervalLabel(durationMs)}`);
-
-      tick();
-      tickTimer = setInterval(tick, 80);
-    }
-
-    function tick(){
-      const now = Date.now();
-      const remaining = slotEndsAt - now;
-
-      timeEl.textContent = fmtMMSS(remaining);
-      setCarProgress(now);
-
-      // 1-minute warning only when duration allows it
-      if (durationMs > 70 * 1000) {
-        if (!warnedAtOneMinute && remaining <= 60 * 1000 && remaining > 0){
-          warnedAtOneMinute = true;
-          const nextKey = getNextModeKey();
-          speak(`One minute left to drive. ${voiceForKey(nextKey)}, get ready`);
-          setBlink(true);
-        }
-      }
-
-      if (remaining <= 0) endSlot();
-    }
-
-    function endSlot(){
-      if (tickTimer){
-        clearInterval(tickTimer);
-        tickTimer = null;
-      }
-
-      // snap car to finish
-      carEl.style.left = "100%";
-      stopCarEffects();
-
-      const current = rotation[idx];
-      speak(`${current.voice} training end`);
-
-      idx = (idx + 1) % rotation.length;
-      startSlot();
-    }
-
-    function lockInputs(lock){
-      mFWD.disabled = lock;
-      mTouring.disabled = lock;
-      m112.disabled = lock;
-      mMod.disabled = lock;
-      mBeginner.disabled = lock;
-
-      b35.disabled = lock;
-      b5.disabled = lock;
-      b10.disabled = lock;
-      b15.disabled = lock;
-
-      customMin.disabled = lock;
-      testVoiceBtn.disabled = lock;
-    }
-
-    function enterRunView(on){
-      document.body.classList.toggle("run", !!on);
-    }
-
-    function start(){
-      const rot = buildRotation();
-      if (rot.length === 0){
-        setToast("Select at least one mode.");
-        return;
-      }
-
-      running = true;
-      requestWakeLock();
-      enterRunView(true);
-
-      rotation = rot;
-      idx = 0;
-
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-      lockInputs(true);
-
-      setToast("Started.");
-      startSlot();
-    }
-
-    function stop(){
-      running = false;
-      releaseWakeLock();
-      enterRunView(false);
-
-      if (tickTimer){
-        clearInterval(tickTimer);
-        tickTimer = null;
-      }
-
-      try{ if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e){}
-
-      badge.textContent = "STOPPED";
-      statusEl.textContent = "Stopped";
-      setBlink(false);
-
-      stopCarEffects();
-      resetCar();
-
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      lockInputs(false);
-
-      setToast("Stopped.");
-      refreshIdleView();
-    }
-
-    // Skip: end current slot immediately and jump to next (with announcements)
-    function skip(){
-      if (!running || rotation.length === 0) return;
-
-      if (tickTimer){
-        clearInterval(tickTimer);
-        tickTimer = null;
-      }
-
-      carEl.style.left = "100%";
-      stopCarEffects();
-
-      const current = rotation[idx];
-      speak(`${current.voice} training end`);
-
-      idx = (idx + 1) % rotation.length;
-      startSlot();
-    }
-
-    startBtn.onclick = start;
-    stopBtn.onclick = stop;
-    stopRunBtn.onclick = stop;
-    skipRunBtn.onclick = skip;
-
-    testVoiceBtn.onclick = () => {
-      speak("Test voice. time slash sloth.");
-      setToast("If you heard that, voice is working.");
-    };
-
-    function hideSplash(){
-      splash.classList.add("hide");
-      setTimeout(() => { splash.style.display = "none"; }, 450);
-    }
-
-    enterBtn.onclick = () => {
-      speak("Voice enabled");
-      setTimeout(() => { try { speechSynthesis.getVoices?.(); } catch(e){} }, 200);
-      hideSplash();
-    };
-
-    // Defaults
-    setDurationMs(10 * 60 * 1000);
-    refreshIdleView();
-  </script>
-  <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js");
-  });
+    sel.value = GROUPS[g];
+    sel.onchange = () => GROUPS[g] = sel.value;
+  }
 }
-</script>
 
+function fmt(ms){
+  const s = Math.max(0,Math.ceil(ms/1000));
+  const m = Math.floor(s/60);
+  return String(m).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+}
+
+function speak(t){
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang="en-US";
+    speechSynthesis.speak(u);
+  }catch{}
+}
+
+function start(){
+  if(running) return;
+  running=true;
+  idx=0;
+  el("start").disabled=true;
+  el("stop").disabled=false;
+  runSlot();
+}
+
+function runSlot(){
+  const g = order[idx];
+  const mode = GROUPS[g];
+  const next = GROUPS[order[(idx+1)%3]];
+
+  el("badge").textContent="RUNNING";
+  el("mode").textContent=mode;
+  el("next").textContent="NEXT UP: "+next;
+
+  speak(mode);
+
+  endAt = Date.now()+DURATION;
+  tick();
+  timer = setInterval(tick,200);
+}
+
+function tick(){
+  const left = endAt-Date.now();
+  el("time").textContent = fmt(left);
+
+  if(left<=60000 && left>59000){
+    speak("One minute left");
+  }
+
+  if(left<=0){
+    clearInterval(timer);
+    idx=(idx+1)%3;
+    runSlot();
+  }
+}
+
+function stop(){
+  running=false;
+  clearInterval(timer);
+  el("badge").textContent="STOPPED";
+  el("start").disabled=false;
+  el("stop").disabled=true;
+}
+
+el("start").onclick=start;
+el("stop").onclick=stop;
+
+populate();
+</script>
 </body>
 </html>
+

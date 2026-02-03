@@ -29,16 +29,24 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       font-size: calc(16px * var(--scale));
     }
+
+    /* FIX: allow scrolling in edit mode */
     body{
       background: var(--bg);
       color: var(--fg);
-      overflow:hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
+    /* keep lock in run mode */
+    body.run{
+      overflow: hidden;
+    }
 
+    /* FIX: allow content to exceed viewport */
     .wrap{
-      height:100%;
+      min-height:100%;
       padding: 14px;
       padding-top: calc(14px + env(safe-area-inset-top));
       padding-bottom: calc(14px + env(safe-area-inset-bottom));
@@ -76,6 +84,9 @@
       border: 1px solid var(--outline);
       border-radius: 16px;
       padding: 12px;
+
+      /* NICE UX: better anchor/scroll behavior when jumping */
+      scroll-margin-top: 80px;
     }
 
     .row{
@@ -1426,7 +1437,7 @@
 
             saveActiveProfile();
 
-            // IMPORTANT: no rebuild here (keeps focus on mobile)
+            // no rebuild here (keeps focus on mobile)
             updateModeChip(k);
             updateModeSummary(block, k);
 
@@ -1581,7 +1592,6 @@
       setTimeout(() => { splash.style.display = "none"; }, 450);
     }
     enterBtn.onclick = () => {
-      // Android needs a user gesture before speech works reliably
       speak("Voice enabled");
       setTimeout(() => { try { speechSynthesis.getVoices?.(); } catch(e){} }, 200);
       hideSplash();
@@ -1605,4 +1615,3 @@
   </script>
 </body>
 </html>
-

@@ -29,23 +29,16 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       font-size: calc(16px * var(--scale));
     }
-
-    /* Scroll in edit mode */
     body{
       background: var(--bg);
       color: var(--fg);
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow:hidden;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
-    /* Lock in run mode */
-    body.run{
-      overflow: hidden;
-    }
 
     .wrap{
-      min-height:100%;
+      height:100%;
       padding: 14px;
       padding-top: calc(14px + env(safe-area-inset-top));
       padding-bottom: calc(14px + env(safe-area-inset-bottom));
@@ -83,7 +76,6 @@
       border: 1px solid var(--outline);
       border-radius: 16px;
       padding: 12px;
-      scroll-margin-top: 80px;
     }
 
     .row{
@@ -113,10 +105,6 @@
     }
     .chip label{ display:flex; align-items:center; gap:10px; width:100%; cursor:pointer; font-weight:900; }
     .chip input[type="checkbox"]{ transform: scale(1.25); }
-
-    .chip[draggable="true"]{ cursor: grab; }
-    .chip.dragging{ opacity: .55; }
-    .chip.dropTarget{ outline: 2px solid rgba(255,255,255,.22); }
 
     .dot{
       width: 14px; height: 14px; border-radius: 50%;
@@ -468,7 +456,7 @@
 
 <body>
   <div class="splash" id="splash">
-    <img src="loggaml.png" class="splashLogo" alt="time/sloth logo">
+    <img src="../logo.png" class="splashLogo" alt="time/sloth logo">
     <div class="splashText">time/sloth PRO</div>
     <div class="splashSub">Tap Enter to enable voice (important on Android) and start.</div>
     <button class="splashBtn primary" id="enterBtn">Enter</button>
@@ -486,7 +474,7 @@
   <div class="wrap">
     <div class="topbar">
       <div class="title">
-        <img src="loggaml.png" alt="time/sloth logo" class="logoTop">
+        <img src="../logo.png" alt="time/sloth logo" class="logoTop">
         <span>time/sloth PRO</span>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
@@ -519,10 +507,10 @@
       <div class="toast" id="profileToast"></div>
     </div>
 
-    <!-- Modes + time -->
+    <!-- Groups + time -->
     <div class="panel">
       <div class="row">
-        <div class="small"><b>Modes</b> (drag to reorder)</div>
+        <div class="small"><b>Groups</b> (order below)</div>
         <div class="small">Time: <b id="intervalLabel">10 min</b></div>
       </div>
 
@@ -544,7 +532,7 @@
       </div>
 
       <div class="toast" id="toast"></div>
-      <div class="hint">Weight styr hur ofta ett mode dyker upp i rotationen. Dra chips för ordning.</div>
+      <div class="hint">Weight styr hur ofta en grupp dyker upp i rotationen.</div>
     </div>
 
     <!-- Warnings -->
@@ -561,10 +549,10 @@
       </div>
     </div>
 
-    <!-- Mode settings -->
+    <!-- Group settings -->
     <div class="panel" id="settingsPanel">
       <div class="row">
-        <div class="small"><b>Mode settings</b></div>
+        <div class="small"><b>Group settings</b></div>
         <div class="small">Label + Voice + Colors + Weight</div>
       </div>
       <div class="grid" style="margin-top:10px; gap:10px;" id="modeSettings"></div>
@@ -572,10 +560,10 @@
 
     <!-- Stage -->
     <div class="stage" id="stage">
-      <img src="loggaml.png" class="stageLogo" alt="time/sloth logo">
+      <img src="../logo.png" class="stageLogo" alt="time/sloth logo">
       <div class="badge" id="badge">IDLE</div>
 
-      <div class="mode" id="mode">Select modes</div>
+      <div class="mode" id="mode">Select groups</div>
       <div class="time" id="time">--:--</div>
       <div class="next" id="next">NEXT UP: --</div>
       <div class="sub" id="sub">Start to begin rotation</div>
@@ -662,23 +650,32 @@
     const importBtn = el("importBtn");
     const resetBtn = el("resetBtn");
 
-    const MODE_KEYS = ["FWD","Touring","1/12","Mod","GT","Kidz"];
-    const LS_KEY = "ts_pro_profiles_v2";
+    // === GROUPS 1-6 ===
+    const MODE_KEYS = ["Group 1","Group 2","Group 3","Group 4","Group 5","Group 6"];
+
+    // New storage key so old profiles won't conflict
+    const LS_KEY = "ts_pro_profiles_groups_v2";
 
     const DEFAULT_MODE = {
-      FWD:     { label:"FWD",     voice:"Front wheel drive class",  weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
-      Touring: { label:"Touring", voice:"Touring stock class",      weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00" },
-      "1/12":  { label:"1/12",    voice:"One twelve class",         weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40" },
-      Mod:     { label:"Mod",     voice:"Modify class",             weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f" },
-      GT:      { label:"GT",      voice:"Grand touring class",      weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" },
-      Kidz:    { label:"Kidz",    voice:"Kids class",               weight:1, twoTone:false, split:"lr", c1:"#ffffff", c2:"#d9d9d9" }
+      "Group 1": { label:"Group 1", voice:"Group 1", weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
+      "Group 2": { label:"Group 2", voice:"Group 2", weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00" },
+      "Group 3": { label:"Group 3", voice:"Group 3", weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" },
+      "Group 4": { label:"Group 4", voice:"Group 4", weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40" },
+      "Group 5": { label:"Group 5", voice:"Group 5", weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f" },
+      "Group 6": { label:"Group 6", voice:"Group 6", weight:1, twoTone:false, split:"lr", c1:"#455a64", c2:"#1c262b" }
     };
 
     const DEFAULT_PROFILE = () => ({
       name: "Default",
       durationMin: 10,
-      order: [...MODE_KEYS],
-      enabled: { FWD:true, Touring:true, "1/12":true, Mod:true, GT:true, Kidz:true },
+      enabled: {
+        "Group 1": true,
+        "Group 2": true,
+        "Group 3": true,
+        "Group 4": true,
+        "Group 5": true,
+        "Group 6": true
+      },
       warnings: { s60:true, s30:true, s10:true, softStart:true },
       modes: JSON.parse(JSON.stringify(DEFAULT_MODE))
     });
@@ -686,7 +683,16 @@
     let store = loadStore();
     let activeId = store.activeId;
     let profile = store.profiles[activeId] || DEFAULT_PROFILE();
-    ensureOrder(profile);
+
+    // Ensure voice always follows label on first load / reset:
+    // If user edits label later, voice can still be edited separately.
+    // But defaults are identical.
+    for (const k of MODE_KEYS){
+      if (!profile.modes?.[k]) continue;
+      if (!profile.modes[k].voice || String(profile.modes[k].voice).trim().length === 0){
+        profile.modes[k].voice = profile.modes[k].label || k;
+      }
+    }
 
     let intervalMin = clampInt(profile.durationMin, 2, 60);
     let durationMs = intervalMin * 60 * 1000;
@@ -731,7 +737,6 @@
              voices.find(v => /en-GB/i.test(v.lang)) ||
              voices.find(v => /^en/i.test(v.lang)) || null;
     }
-
     function speak(text){
       try{
         if (!("speechSynthesis" in window)) return;
@@ -747,36 +752,6 @@
         speechSynthesis.speak(u);
       } catch(e){}
     }
-
-    /* NEW: helpers to avoid voice overlap in soft start */
-    function wait(ms){
-      return new Promise(res => setTimeout(res, ms));
-    }
-    function speakAsync(text){
-      return new Promise((resolve) => {
-        try{
-          if (!("speechSynthesis" in window)) return resolve();
-          speechSynthesis.getVoices?.();
-          speechSynthesis.cancel();
-
-          const u = new SpeechSynthesisUtterance(text);
-          u.lang = "en-US";
-          const v = pickEnglishVoice();
-          if (v) u.voice = v;
-          u.rate = 1.0;
-          u.pitch = 1.0;
-          u.volume = 1.0;
-
-          u.onend = () => resolve();
-          u.onerror = () => resolve();
-
-          speechSynthesis.speak(u);
-        } catch(e){
-          resolve();
-        }
-      });
-    }
-
     if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
@@ -792,14 +767,10 @@
       if (!Number.isFinite(n)) n = a;
       return Math.max(a, Math.min(b, Math.round(n)));
     }
-    function cssKey(k){ return String(k).replaceAll("/","_"); }
 
-    function ensureOrder(p){
-      const base = [...MODE_KEYS];
-      const arr = Array.isArray(p.order) ? p.order.slice() : [];
-      const cleaned = arr.filter(k => base.includes(k));
-      for (const k of base) if (!cleaned.includes(k)) cleaned.push(k);
-      p.order = cleaned;
+    // IMPORTANT: handle spaces now
+    function cssKey(k){
+      return String(k).replaceAll("/","_").replaceAll(" ","_");
     }
 
     function loadStore(){
@@ -824,7 +795,6 @@
       return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
     }
     function saveActiveProfile(){
-      ensureOrder(profile);
       store.activeId = activeId;
       store.profiles[activeId] = profile;
       saveStore();
@@ -860,7 +830,7 @@
     }
 
     function applyStageTheme(modeKey){
-      const m = profile.modes[modeKey] || profile.modes.FWD;
+      const m = profile.modes[modeKey] || profile.modes["Group 1"];
       const fg = pickTextColor(m.c1, m.c2, m.twoTone);
 
       if (m.twoTone){
@@ -912,6 +882,7 @@
     }
 
     function voiceTextFor(key){
+      // Voice should follow label by default
       const v = (profile.modes[key]?.voice || profile.modes[key]?.label || key || "").trim();
       return v.length ? v : key;
     }
@@ -919,11 +890,10 @@
       return (profile.modes[key]?.label || key);
     }
 
-    // Rotation with weight (uses profile.order)
+    // Rotation with weight
     function buildRotation(){
-      ensureOrder(profile);
       const list = [];
-      for (const k of (profile.order || MODE_KEYS)){
+      for (const k of MODE_KEYS){
         if (!profile.enabled[k]) continue;
         const w = clampInt(profile.modes[k]?.weight ?? 1, 1, 20);
         for (let i=0; i<w; i++) list.push(k);
@@ -942,8 +912,7 @@
     }
 
     function lockInputs(lock){
-      ensureOrder(profile);
-      for (const k of (profile.order || MODE_KEYS)){
+      for (const k of MODE_KEYS){
         const cb = el("cb_" + cssKey(k));
         if (cb) cb.disabled = lock;
         const blk = document.querySelector(`[data-mode="${cssKey(k)}"]`);
@@ -1001,35 +970,41 @@
       tickTimer = setInterval(tick, 80);
     }
 
-    /* UPDATED: no voice overlap */
-    async function doSoftStartThenRun(currentKey){
+    // Soft start without voice overlap:
+    // Speak class + duration first, then countdown 3..2..1..Go
+    function doSoftStartThenRun(currentKey){
       inCountdown = true;
       badge.textContent = "GET READY";
       subEl.textContent = "Soft start";
       resetCar();
       startCarEffects();
 
-      // 1) Say class name, wait until finished
-      await speakAsync(`${voiceTextFor(currentKey)}`);
+      // NEW: say duration at slot start
+      speak(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
 
-      // small buffer (helps Android)
-      await wait(150);
-
-      // 2) 3..2..1 without overlap
       const steps = [3,2,1];
-      for (const n of steps){
+      let i = 0;
+
+      const step = () => {
         if (!running) return;
+        const n = steps[i];
         timeEl.textContent = "00:0" + n;
-        await speakAsync(String(n));
-        await wait(150);
-      }
+        speak(String(n));
+        i++;
+        if (i < steps.length){
+          countdownTimer = setTimeout(step, 900);
+        } else {
+          countdownTimer = setTimeout(() => {
+            if (!running) return;
+            speak("Go");
+            clearCountdown();
+            beginHeatTimer();
+          }, 900);
+        }
+      };
 
-      if (!running) return;
-
-      // 3) Go and start timer
-      await speakAsync("Go");
-      clearCountdown();
-      beginHeatTimer();
+      timeEl.textContent = "00:03";
+      countdownTimer = setTimeout(step, 950);
     }
 
     function startSlot(){
@@ -1051,6 +1026,7 @@
       if (profile.warnings.softStart){
         doSoftStartThenRun(currentKey);
       } else {
+        // NEW: say duration at slot start
         speak(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
         beginHeatTimer();
       }
@@ -1105,7 +1081,7 @@
     function start(){
       const rot = buildRotation();
       if (rot.length === 0){
-        setToast("Select at least one mode.");
+        setToast("Select at least one group.");
         return;
       }
 
@@ -1174,7 +1150,7 @@
     function rebuildProfileSelect(){
       profileSelect.innerHTML = "";
       const entries = Object.entries(store.profiles);
-      entries.sort((a,b) => String(a[1]?.name||"").localeCompare(String(a[1]?.name||"")));
+      entries.sort((a,b) => String(a[1]?.name||"").localeCompare(String(b[1]?.name||"")));
       for (const [id, p] of entries){
         const opt = document.createElement("option");
         opt.value = id;
@@ -1189,7 +1165,14 @@
       if (!p) return;
       activeId = id;
       profile = p;
-      ensureOrder(profile);
+
+      // ensure voice exists
+      for (const k of MODE_KEYS){
+        if (!profile.modes?.[k]) continue;
+        if (!profile.modes[k].voice || String(profile.modes[k].voice).trim().length === 0){
+          profile.modes[k].voice = profile.modes[k].label || k;
+        }
+      }
 
       intervalMin = clampInt(profile.durationMin, 2, 60);
       durationMs = intervalMin * 60 * 1000;
@@ -1230,13 +1213,14 @@
       base.enabled = { ...base.enabled, ...(p.enabled || {}) };
       base.warnings = { ...base.warnings, ...(p.warnings || {}) };
 
-      base.order = Array.isArray(p.order) ? p.order.slice() : base.order;
-      ensureOrder(base);
-
       for (const k of MODE_KEYS){
         base.modes[k] = { ...base.modes[k], ...((p.modes||{})[k] || {}) };
-        base.modes[k].label = String(base.modes[k].label || k).slice(0,20);
-        base.modes[k].voice = String(base.modes[k].voice || k).slice(0,60);
+        base.modes[k].label = String(base.modes[k].label || k).slice(0,20) || k;
+
+        // if incoming voice is empty, follow label
+        const incomingVoice = String(base.modes[k].voice || "").trim();
+        base.modes[k].voice = (incomingVoice.length ? incomingVoice : (base.modes[k].label || k)).slice(0,60);
+
         base.modes[k].weight = clampInt(base.modes[k].weight, 1, 20);
         base.modes[k].twoTone = !!base.modes[k].twoTone;
         base.modes[k].split = (base.modes[k].split === "tb") ? "tb" : "lr";
@@ -1266,22 +1250,7 @@
       setTimeout(() => setProfileToast(""), 1200);
     }
 
-    // --- UI helpers: update chip + summary without rebuilding ---
-    function updateModeChip(k){
-      const cb = el("cb_" + cssKey(k));
-      if (!cb) return;
-      const chip = cb.closest(".chip");
-      if (!chip) return;
-      const dot = chip.querySelector(".dot");
-      const b = chip.querySelector("span b");
-      if (dot) dot.style.background = profile.modes[k].c1 || "#999999";
-      if (b) b.textContent = profile.modes[k].label || k;
-    }
-    function updateModeSummary(detailsEl, k){
-      const sum = detailsEl.querySelector("summary");
-      if (sum) sum.textContent = `${profile.modes[k].label || k} settings`;
-    }
-
+    // Mode checks + settings
     function escapeHtml(s){
       return String(s ?? "")
         .replaceAll("&","&amp;")
@@ -1292,23 +1261,15 @@
     }
     function escapeAttr(s){ return escapeHtml(s); }
 
-    // Drag & drop state
-    let dragFromKey = null;
-
     function buildModeChecks(){
-      ensureOrder(profile);
       modeChecks.innerHTML = "";
-
-      for (const k of (profile.order || MODE_KEYS)){
+      for (const k of MODE_KEYS){
         const id = "cb_" + cssKey(k);
         const dotColor = profile.modes[k].c1 || "#999999";
         const checked = profile.enabled[k] ? "checked" : "";
 
         const wrap = document.createElement("div");
         wrap.className = "chip";
-        wrap.draggable = true;
-        wrap.dataset.key = k;
-
         wrap.innerHTML = `
           <label>
             <input type="checkbox" id="${id}" ${checked}>
@@ -1323,66 +1284,12 @@
           saveActiveProfile();
           if (!running) refreshIdleView();
         };
-
-        wrap.addEventListener("dragstart", (e) => {
-          if (running) { e.preventDefault(); return; }
-          dragFromKey = k;
-          wrap.classList.add("dragging");
-          e.dataTransfer.effectAllowed = "move";
-          try{ e.dataTransfer.setData("text/plain", k); } catch(_){}
-        });
-
-        wrap.addEventListener("dragend", () => {
-          wrap.classList.remove("dragging");
-          dragFromKey = null;
-          document.querySelectorAll(".chip.dropTarget").forEach(x => x.classList.remove("dropTarget"));
-        });
-
-        wrap.addEventListener("dragover", (e) => {
-          if (running) return;
-          e.preventDefault();
-          wrap.classList.add("dropTarget");
-        });
-
-        wrap.addEventListener("dragleave", () => {
-          wrap.classList.remove("dropTarget");
-        });
-
-        wrap.addEventListener("drop", (e) => {
-          if (running) return;
-          e.preventDefault();
-          wrap.classList.remove("dropTarget");
-
-          const fromKey = dragFromKey || (() => { try { return e.dataTransfer.getData("text/plain"); } catch(_) { return ""; } })();
-          const toKey = k;
-
-          if (!fromKey || fromKey === toKey) return;
-
-          ensureOrder(profile);
-          const ord = profile.order.slice();
-          const fromIdx = ord.indexOf(fromKey);
-          const toIdx = ord.indexOf(toKey);
-          if (fromIdx < 0 || toIdx < 0) return;
-
-          ord.splice(fromIdx, 1);
-          ord.splice(toIdx, 0, fromKey);
-
-          profile.order = ord;
-          saveActiveProfile();
-
-          buildModeChecks();
-          buildModeSettings();
-          if (!running) refreshIdleView();
-          setToast("Order updated.");
-        });
       }
     }
 
     function buildModeSettings(){
-      ensureOrder(profile);
       modeSettings.innerHTML = "";
-
-      for (const k of (profile.order || MODE_KEYS)){
+      for (const k of MODE_KEYS){
         const m = profile.modes[k];
         const block = document.createElement("details");
         block.dataset.mode = cssKey(k);
@@ -1444,7 +1351,15 @@
             } else if (field === "split"){
               m.split = String(inp.value || "lr");
             } else if (field === "label"){
+              const prevLabel = m.label;
               m.label = String(inp.value || "").trim().slice(0, 20) || k;
+
+              // if voice equals previous label (or empty), keep voice synced to label
+              const voiceTrim = String(m.voice || "").trim();
+              if (!voiceTrim || voiceTrim === String(prevLabel || "").trim()){
+                m.voice = m.label;
+              }
+
             } else if (field === "voice"){
               m.voice = String(inp.value || "").trim().slice(0, 60) || m.label || k;
             } else if (field === "weight"){
@@ -1457,10 +1372,8 @@
             }
 
             saveActiveProfile();
-
-            updateModeChip(k);
-            updateModeSummary(block, k);
-
+            buildModeChecks();
+            buildModeSettings();
             if (!running) refreshIdleView();
           });
         });
@@ -1471,10 +1384,10 @@
       const rot = buildRotation();
       if (rot.length === 0){
         badge.textContent = "IDLE";
-        modeEl.textContent = "Select modes";
+        modeEl.textContent = "Select groups";
         timeEl.textContent = "--:--";
         nextEl.textContent = "NEXT UP: --";
-        subEl.textContent = "Pick at least one mode.";
+        subEl.textContent = "Pick at least one group.";
         setBlink(false);
         resetCar();
         stage.style.background = "rgba(0,0,0,.15)";
@@ -1599,7 +1512,6 @@
       const keepName = profile.name || "Default";
       profile = DEFAULT_PROFILE();
       profile.name = keepName;
-      ensureOrder(profile);
       store.profiles[activeId] = profile;
       saveStore();
       switchToProfile(activeId);

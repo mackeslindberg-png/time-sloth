@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>time/sloth PRO</title>
+  <title>time/sloth</title>
 
   <style>
     :root{
@@ -32,10 +32,11 @@
     body{
       background: var(--bg);
       color: var(--fg);
-      overflow:hidden;
+      overflow:auto;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
+    body.run{ overflow:hidden; }
 
     .wrap{
       height:100%;
@@ -45,6 +46,8 @@
       display:flex;
       flex-direction:column;
       gap: 12px;
+      overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .topbar{
@@ -53,7 +56,6 @@
       align-items:center;
       justify-content:space-between;
     }
-
     .title{
       display:flex;
       align-items:center;
@@ -63,12 +65,11 @@
       font-size: calc(16px * var(--scale));
       opacity:.95;
     }
-
     .logoTop{
       height: 26px;
       width: 26px;
       display:block;
-      opacity: .25;
+      opacity: .9;
     }
 
     .panel{
@@ -77,7 +78,6 @@
       border-radius: 16px;
       padding: 12px;
     }
-
     .row{
       display:flex;
       gap: 10px;
@@ -112,10 +112,6 @@
       flex: 0 0 auto;
     }
 
-    .btnrow{ display:grid; gap: 10px; }
-    .btnrow.controls{ grid-template-columns: 1fr 1fr; }
-    .btnrow.misc{ grid-template-columns: 1fr; }
-
     button{
       font: inherit;
       border: 1px solid rgba(255,255,255,.18);
@@ -132,17 +128,9 @@
     button.danger{ background: rgba(255,60,60,.22); border-color: rgba(255,60,60,.35); }
     button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
 
-    .select{
-      width:100%;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.18);
-      color: var(--fg);
-      padding: 12px;
-      font-size: calc(14px * var(--scale));
-      outline:none;
-      font-weight: 900;
-    }
+    .btnrow{ display:grid; gap: 10px; }
+    .btnrow.controls{ grid-template-columns: 1fr 1fr; }
+    .btnrow.times{ grid-template-columns: 1fr 1fr 1fr; }
 
     /* Stage */
     .stage{
@@ -160,6 +148,7 @@
       position: relative;
       overflow:hidden;
       isolation: isolate;
+      min-height: 240px;
     }
 
     .stageLogo{
@@ -170,7 +159,7 @@
       width: 26px;
       z-index: 5;
       pointer-events:none;
-      opacity: .25;
+      opacity: .9;
     }
 
     .badge{
@@ -244,14 +233,14 @@
       text-align:center;
     }
     .splash.hide{ opacity:0; pointer-events:none; }
-    .splashLogo{ width: min(260px, 70vw); height:auto; display:block; opacity:.9; }
+    .splashLogo{ width: min(260px, 70vw); height:auto; display:block; opacity:.95; }
     .splashText{ font-weight: 900; letter-spacing: .6px; font-size: calc(22px * var(--scale)); opacity: .95; }
     .splashSub{ font-size: calc(13px * var(--scale)); opacity: .78; max-width: 46ch; line-height: 1.35; font-weight:800; }
     .splashBtn{ margin-top: 8px; width: min(360px, 92vw); }
 
     /* Run view */
     body.run .panel{ display:none; }
-    body.run .wrap{ gap: 0; }
+    body.run .wrap{ gap: 0; overflow: hidden; }
     body.run .topbar{ display:none; }
     body.run .stage{
       flex: 1 1 auto;
@@ -280,88 +269,7 @@
       font-size: calc(16px * var(--scale));
     }
 
-    /* Fullscreen button in run mode */
-    .fsFloat{
-      position: fixed;
-      top: calc(10px + env(safe-area-inset-top));
-      right: 10px;
-      z-index: 1200;
-      display:none;
-    }
-    body.run .fsFloat{ display:block; }
-    .fsFloat button{
-      min-height: 44px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      font-size: calc(14px * var(--scale));
-      background: rgba(0,0,0,.22);
-      border-color: rgba(255,255,255,.22);
-    }
-
-    /* Custom time slider */
-    .sliderRow{
-      margin-top: 10px;
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 14px;
-      padding: 10px 12px;
-    }
-    .sliderRow input[type="range"]{ width: 100%; }
-    .sliderVal{
-      min-width: 86px;
-      text-align:right;
-      font-weight: 900;
-      opacity: .95;
-      font-size: calc(12px * var(--scale));
-    }
-
-    /* Settings per mode */
-    details{
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 14px;
-      padding: 10px 12px;
-      background: rgba(255,255,255,.06);
-    }
-    details summary{
-      cursor:pointer;
-      font-weight: 900;
-      list-style: none;
-    }
-    details summary::-webkit-details-marker{ display:none; }
-
-    .modeForm{ margin-top: 10px; display:grid; gap: 10px; }
-    .field{ display:grid; gap: 6px; }
-    .field label{ font-weight: 900; opacity: .92; font-size: calc(12px * var(--scale)); }
-    .field input[type="text"], .field input[type="number"]{
-      width:100%;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.18);
-      color: var(--fg);
-      padding: 12px;
-      font-size: calc(14px * var(--scale));
-      outline: none;
-      font-weight: 900;
-    }
-    .inline2{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .toggleRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.10);
-      font-weight: 900;
-      font-size: calc(13px * var(--scale));
-    }
-    .toggleRow input{ transform: scale(1.25); }
-
-    /* Track with flags + car */
+    /* Track */
     .track{
       position:absolute;
       left: 14px;
@@ -419,51 +327,15 @@
       75%  { transform: translate(-50%,-58%) scale(1.02); }
       100% { transform: translate(-50%,-50%) scale(1); }
     }
-    .smoke{
-      position:absolute;
-      left:-6px;
-      top:50%;
-      transform: translate(-100%,-50%);
-      width: 46px;
-      height: 26px;
-      pointer-events:none;
-      overflow: visible;
-      z-index:1;
-      opacity: 0;
-    }
-    .car.running .smoke{ opacity: 1; }
-    .puff{
-      position:absolute;
-      right: 0;
-      top: 50%;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.55);
-      transform: translateY(-50%);
-      animation: puff 520ms ease-out infinite;
-      opacity: 0;
-    }
-    .puff.p2{ animation-delay: 140ms; width: 8px; height: 8px; background: rgba(255,255,255,.45); }
-    .puff.p3{ animation-delay: 280ms; width: 12px; height: 12px; background: rgba(255,255,255,.35); }
-    @keyframes puff{
-      0%{ transform: translate(0,-50%) scale(.7); opacity: 0; }
-      15%{ opacity: .75; }
-      100%{ transform: translate(-40px,-50%) scale(1.6); opacity: 0; }
-    }
   </style>
 </head>
 
 <body>
   <div class="splash" id="splash">
-    <img src="../logo.png" class="splashLogo" alt="time/sloth logo">
-    <div class="splashText">time/sloth PRO</div>
+    <img src="logo.png" class="splashLogo" alt="time/sloth logo">
+    <div class="splashText">time/sloth</div>
     <div class="splashSub">Tap Enter to enable voice (important on Android) and start.</div>
     <button class="splashBtn primary" id="enterBtn">Enter</button>
-  </div>
-
-  <div class="fsFloat">
-    <button id="fsBtnRun" title="Fullscreen">Fullscreen</button>
   </div>
 
   <div class="runControls" id="runControls">
@@ -474,52 +346,24 @@
   <div class="wrap">
     <div class="topbar">
       <div class="title">
-        <img src="../logo.png" alt="time/sloth logo" class="logoTop">
-        <span>time/sloth PRO</span>
+        <img src="logo.png" alt="time/sloth logo" class="logoTop">
+        <span>time/sloth</span>
       </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button id="fsBtn" style="min-height:44px;padding:10px 12px;border-radius:14px;font-size:calc(14px * var(--scale));">Fullscreen</button>
-        <div class="small" id="status">Ready</div>
-      </div>
+      <div class="small" id="status">Ready</div>
     </div>
 
-    <!-- Profiles -->
     <div class="panel">
       <div class="row">
-        <div class="small"><b>Profile</b></div>
-        <div class="small">Saved locally</div>
-      </div>
-
-      <div class="row" style="margin-top:10px;">
-        <select id="profileSelect" class="select" style="flex:1 1 auto; min-width: 220px;"></select>
-        <button id="newProfile" class="primary" style="min-height:48px;">New</button>
-        <button id="saveProfile" style="min-height:48px;">Save</button>
-        <button id="renameProfile" style="min-height:48px;">Rename</button>
-        <button id="deleteProfile" class="danger" style="min-height:48px;">Delete</button>
-      </div>
-
-      <div class="row" style="margin-top:10px;">
-        <button id="exportBtn">Export</button>
-        <button id="importBtn" class="primary">Import</button>
-        <button id="resetBtn" class="danger">Reset defaults</button>
-      </div>
-
-      <div class="toast" id="profileToast"></div>
-    </div>
-
-    <!-- Groups + time -->
-    <div class="panel">
-      <div class="row">
-        <div class="small"><b>Groups</b> (order below)</div>
-        <div class="small">Time: <b id="intervalLabel">10 min</b></div>
+        <div class="small"><b>Groups</b></div>
+        <div class="small">Time: <b id="intervalLabel">5 min</b></div>
       </div>
 
       <div class="grid cols2" style="margin-top:10px;" id="modeChecks"></div>
 
-      <div class="sliderRow">
-        <div class="small"><b>Custom</b></div>
-        <input type="range" id="customMin" min="2" max="60" step="1" value="10">
-        <div class="sliderVal" id="customLabel">10 min</div>
+      <div class="btnrow times" style="margin-top:10px;">
+        <button id="t2">2 min</button>
+        <button id="t5" class="primary">5 min</button>
+        <button id="t10">10 min</button>
       </div>
 
       <div class="btnrow controls" style="margin-top:10px;">
@@ -527,40 +371,12 @@
         <button id="stop" class="danger" disabled>Stop</button>
       </div>
 
-      <div class="btnrow misc" style="margin-top:10px;">
-        <button id="testVoice">Test Voice</button>
-      </div>
-
       <div class="toast" id="toast"></div>
-      <div class="hint">Weight styr hur ofta en grupp dyker upp i rotationen.</div>
+      <div class="hint">Välj minst en grupp.</div>
     </div>
 
-    <!-- Warnings -->
-    <div class="panel">
-      <div class="row">
-        <div class="small"><b>Warnings</b></div>
-        <div class="small">Voice prompts</div>
-      </div>
-      <div class="grid cols2" style="margin-top:10px;">
-        <div class="chip"><label><input type="checkbox" id="w60" checked> 60s warning</label></div>
-        <div class="chip"><label><input type="checkbox" id="w30" checked> 30s warning</label></div>
-        <div class="chip"><label><input type="checkbox" id="w10" checked> 10s countdown</label></div>
-        <div class="chip"><label><input type="checkbox" id="softStart" checked> Soft start (3..2..1)</label></div>
-      </div>
-    </div>
-
-    <!-- Group settings -->
-    <div class="panel" id="settingsPanel">
-      <div class="row">
-        <div class="small"><b>Group settings</b></div>
-        <div class="small">Label + Colors + Weight</div>
-      </div>
-      <div class="grid" style="margin-top:10px; gap:10px;" id="modeSettings"></div>
-    </div>
-
-    <!-- Stage -->
     <div class="stage" id="stage">
-      <img src="../logo.png" class="stageLogo" alt="time/sloth logo">
+      <img src="logo.png" class="stageLogo" alt="time/sloth logo">
       <div class="badge" id="badge">IDLE</div>
 
       <div class="mode" id="mode">Select groups</div>
@@ -578,11 +394,6 @@
 
         <div class="lane">
           <div class="car" id="car" title="Car">
-            <div class="smoke" aria-hidden="true">
-              <div class="puff p1"></div>
-              <div class="puff p2"></div>
-              <div class="puff p3"></div>
-            </div>
             <svg class="carSvg" viewBox="0 0 64 32" width="28" height="14" aria-hidden="true">
               <path fill="currentColor"
                 d="M10 22h44c3 0 5-2 5-5v-5c0-2-1-3-3-3h-7l-6-6H21l-6 6H8c-2 0-3 1-3 3v5c0 3 2 5 5 5z"/>
@@ -612,7 +423,6 @@
     const badge = el("badge");
     const statusEl = el("status");
     const toastEl = el("toast");
-    const profileToastEl = el("profileToast");
 
     const modeEl = el("mode");
     const timeEl = el("time");
@@ -621,76 +431,27 @@
     const carEl = el("car");
 
     const modeChecks = el("modeChecks");
-    const modeSettings = el("modeSettings");
 
     const intervalLabel = el("intervalLabel");
-    const customMin = el("customMin");
-    const customLabel = el("customLabel");
-
     const startBtn = el("start");
     const stopBtn  = el("stop");
     const stopRunBtn = el("stopRun");
     const skipRunBtn = el("skipRun");
-    const testVoiceBtn = el("testVoice");
 
-    const fsBtn = el("fsBtn");
-    const fsBtnRun = el("fsBtnRun");
+    const t2 = el("t2");
+    const t5 = el("t5");
+    const t10 = el("t10");
 
-    const w60 = el("w60");
-    const w30 = el("w30");
-    const w10 = el("w10");
-    const softStart = el("softStart");
+    const MODE_KEYS = ["Group 1","Group 2","Group 3"];
+    const LS_KEY = "ts_free_v2";
 
-    const profileSelect = el("profileSelect");
-    const newProfileBtn = el("newProfile");
-    const saveProfileBtn = el("saveProfile");
-    const renameProfileBtn = el("renameProfile");
-    const deleteProfileBtn = el("deleteProfile");
-    const exportBtn = el("exportBtn");
-    const importBtn = el("importBtn");
-    const resetBtn = el("resetBtn");
-
-    // === GROUPS 1-6 (requested) ===
-    const MODE_KEYS = ["Group 1","Group 2","Group 3","Group 4","Group 5","Group 6"];
-
-    // New storage key so old profiles won't conflict
-    const LS_KEY = "ts_pro_profiles_groups_v1";
-
-    // Voice text: always uses Label on screen (no separate voice field)
-    const DEFAULT_MODE = {
-      "Group 1": { label:"Group 1", weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
-      "Group 2": { label:"Group 2", weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00" },
-      "Group 3": { label:"Group 3", weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" },
-      "Group 4": { label:"Group 4", weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40" },
-      "Group 5": { label:"Group 5", weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f" },
-      "Group 6": { label:"Group 6", weight:1, twoTone:false, split:"lr", c1:"#455a64", c2:"#1c262b" }
-    };
-
-    const DEFAULT_PROFILE = () => ({
-      name: "Default",
-      durationMin: 10,
-      enabled: {
-        "Group 1": true,
-        "Group 2": true,
-        "Group 3": true,
-        "Group 4": true,
-        "Group 5": true,
-        "Group 6": true
-      },
-      warnings: { s60:true, s30:true, s10:true, softStart:true },
-      modes: JSON.parse(JSON.stringify(DEFAULT_MODE))
+    const DEFAULT = () => ({
+      durationMin: 5,
+      enabled: { "Group 1": true, "Group 2": true, "Group 3": true }
     });
 
-    let store = loadStore();
-    let activeId = store.activeId;
-    let profile = store.profiles[activeId] || DEFAULT_PROFILE();
-
-    // Ensure any legacy profile still speaks label (and has proper group keys)
-    profile = sanitizeProfile(profile);
-    store.profiles[activeId] = profile;
-    saveStore();
-
-    let intervalMin = clampInt(profile.durationMin, 2, 60);
+    let state = loadState();
+    let intervalMin = clampInt(state.durationMin, 2, 10);
     let durationMs = intervalMin * 60 * 1000;
 
     let running = false;
@@ -702,11 +463,8 @@
     let tickTimer = null;
 
     let warned60 = false;
-    let warned30 = false;
     let warned10 = false;
-
     let countdownTimer = null;
-    let inCountdown = false;
 
     // Wake Lock
     let wakeLock = null;
@@ -724,34 +482,54 @@
     });
 
     function setToast(msg){ toastEl.textContent = msg || ""; }
-    function setProfileToast(msg){ profileToastEl.textContent = msg || ""; }
 
-    // TTS
+    // ---------- TTS (queue, no overlap) ----------
     function pickEnglishVoice(){
       const voices = speechSynthesis.getVoices?.() || [];
       return voices.find(v => /en-US/i.test(v.lang)) ||
              voices.find(v => /en-GB/i.test(v.lang)) ||
              voices.find(v => /^en/i.test(v.lang)) || null;
     }
-    function speak(text){
-      try{
-        if (!("speechSynthesis" in window)) return;
-        speechSynthesis.getVoices?.();
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "en-US";
-        const v = pickEnglishVoice();
-        if (v) u.voice = v;
-        u.rate = 1.0;
-        u.pitch = 1.0;
-        u.volume = 1.0;
-        speechSynthesis.speak(u);
-      } catch(e){}
+
+    let ttsChain = Promise.resolve();
+
+    function speakQueued(text){
+      if (!("speechSynthesis" in window)) return Promise.resolve();
+      const msg = String(text || "").trim();
+      if (!msg) return Promise.resolve();
+
+      ttsChain = ttsChain.then(() => new Promise((resolve) => {
+        try{
+          const u = new SpeechSynthesisUtterance(msg);
+          u.lang = "en-US";
+          const v = pickEnglishVoice();
+          if (v) u.voice = v;
+          u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
+
+          u.onend = () => resolve();
+          u.onerror = () => resolve();
+
+          // Viktigt: avbryt inte hela världen varje gång, annars kolliderar det
+          speechSynthesis.speak(u);
+        } catch {
+          resolve();
+        }
+      }));
+      return ttsChain;
     }
+
+    function cancelSpeech(){
+      try{
+        if ("speechSynthesis" in window) speechSynthesis.cancel();
+      } catch(e){}
+      ttsChain = Promise.resolve();
+    }
+
     if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
 
+    // ---------- utils ----------
     function fmtMMSS(ms){
       const total = Math.max(0, Math.ceil(ms / 1000));
       const m = Math.floor(total / 60);
@@ -763,85 +541,34 @@
       if (!Number.isFinite(n)) n = a;
       return Math.max(a, Math.min(b, Math.round(n)));
     }
-
     function cssKey(k){
       return String(k).replaceAll("/","_").replaceAll(" ","_");
     }
 
-    function loadStore(){
+    function loadState(){
       try{
         const raw = localStorage.getItem(LS_KEY);
-        if (!raw){
-          const id = uid();
-          return { activeId: id, profiles: { [id]: DEFAULT_PROFILE() } };
-        }
-        const parsed = JSON.parse(raw);
-        if (!parsed || !parsed.profiles || !parsed.activeId) throw new Error("bad");
-        return parsed;
+        if (!raw) return DEFAULT();
+        const p = JSON.parse(raw);
+        if (!p) return DEFAULT();
+        return { ...DEFAULT(), ...p, enabled: { ...DEFAULT().enabled, ...(p.enabled||{}) } };
       } catch {
-        const id = uid();
-        return { activeId: id, profiles: { [id]: DEFAULT_PROFILE() } };
+        return DEFAULT();
       }
     }
-    function saveStore(){
-      try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e){}
-    }
-    function uid(){
-      return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
-    }
-    function saveActiveProfile(){
-      store.activeId = activeId;
-      store.profiles[activeId] = profile;
-      saveStore();
+    function saveState(){
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){}
     }
 
-    function hexToRgb(hex){
-      const h = (hex || "").replace("#","").trim();
-      if (h.length === 3){
-        const r = parseInt(h[0]+h[0], 16);
-        const g = parseInt(h[1]+h[1], 16);
-        const b = parseInt(h[2]+h[2], 16);
-        return {r,g,b};
-      }
-      if (h.length === 6){
-        const r = parseInt(h.slice(0,2), 16);
-        const g = parseInt(h.slice(2,4), 16);
-        const b = parseInt(h.slice(4,6), 16);
-        return {r,g,b};
-      }
-      return {r:0,g:0,b:0};
-    }
-    function relLuma({r,g,b}){
-      const sr = r/255, sg = g/255, sb = b/255;
-      const toLin = (c) => (c <= 0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4));
-      const R = toLin(sr), G = toLin(sg), B = toLin(sb);
-      return 0.2126*R + 0.7152*G + 0.0722*B;
-    }
-    function pickTextColor(c1, c2, twoTone){
-      const l1 = relLuma(hexToRgb(c1));
-      const l2 = relLuma(hexToRgb(c2));
-      const l = twoTone ? (l1 + l2)/2 : l1;
-      return l > 0.55 ? "#111111" : "#ffffff";
-    }
-
-    function applyStageTheme(modeKey){
-      const m = profile.modes[modeKey] || profile.modes["Group 1"];
-      const fg = pickTextColor(m.c1, m.c2, m.twoTone);
-
-      if (m.twoTone){
-        const dir = (m.split === "tb") ? "180deg" : "90deg";
-        stage.style.background = `linear-gradient(${dir}, ${m.c1} 0 50%, ${m.c2} 50% 100%)`;
-      } else {
-        stage.style.background = m.c1;
-      }
-
-      document.documentElement.style.setProperty("--stageFg", fg);
-
-      const isDarkText = (fg === "#111111");
-      document.documentElement.style.setProperty("--stageBadgeBg", isDarkText ? "rgba(0,0,0,.08)" : "rgba(0,0,0,.22)");
-      document.documentElement.style.setProperty("--stageBadgeBorder", isDarkText ? "rgba(0,0,0,.10)" : "rgba(0,0,0,.18)");
-      document.documentElement.style.setProperty("--laneBg", isDarkText ? "rgba(0,0,0,.10)" : "rgba(0,0,0,.18)");
-      document.documentElement.style.setProperty("--trackShadow", isDarkText ? "rgba(0,0,0,.12)" : "rgba(0,0,0,.25)");
+    function applyStageTheme(key){
+      const colors = {
+        "Group 1": ["#1e5aa8","#0b2f59"],
+        "Group 2": ["#f08a1a","#8a4a00"],
+        "Group 3": ["#2e7d32","#0f3b12"],
+      };
+      const [c1,c2] = colors[key] || ["#333","#111"];
+      stage.style.background = `linear-gradient(90deg, ${c1} 0 50%, ${c2} 50% 100%)`;
+      document.documentElement.style.setProperty("--stageFg", "#ffffff");
     }
 
     function setBlink(on){
@@ -852,6 +579,24 @@
         modeEl.classList.remove("blinkMode");
         timeEl.classList.remove("blinkTime");
       }
+    }
+
+    function buildRotation(){
+      const list = [];
+      for (const k of MODE_KEYS){
+        if (state.enabled[k]) list.push(k);
+      }
+      rotation = list;
+      return rotation;
+    }
+    function getNextKey(){
+      if (rotation.length === 0) return "--";
+      if (rotation.length === 1) return rotation[0];
+      return rotation[(idx + 1) % rotation.length];
+    }
+
+    function enterRunView(on){
+      document.body.classList.toggle("run", !!on);
     }
 
     function setCarProgress(now){
@@ -876,156 +621,136 @@
       carEl.classList.remove("bounce");
     }
 
-    // Voice always matches screen label
-    function labelFor(key){
-      return (profile.modes[key]?.label || key);
-    }
-    function voiceTextFor(key){
-      return labelFor(key);
-    }
-
-    // Rotation with weight
-    function buildRotation(){
-      const list = [];
-      for (const k of MODE_KEYS){
-        if (!profile.enabled[k]) continue;
-        const w = clampInt(profile.modes[k]?.weight ?? 1, 1, 20);
-        for (let i=0; i<w; i++) list.push(k);
-      }
-      rotation = list;
-      return rotation;
-    }
-    function getNextKey(){
-      if (rotation.length === 0) return "--";
-      if (rotation.length === 1) return rotation[0];
-      return rotation[(idx + 1) % rotation.length];
-    }
-
-    function enterRunView(on){
-      document.body.classList.toggle("run", !!on);
-    }
-
     function lockInputs(lock){
       for (const k of MODE_KEYS){
         const cb = el("cb_" + cssKey(k));
         if (cb) cb.disabled = lock;
-        const blk = document.querySelector(`[data-mode="${cssKey(k)}"]`);
-        if (blk){
-          blk.querySelectorAll("input,select").forEach(x => x.disabled = lock);
-        }
       }
-      customMin.disabled = lock;
-      testVoiceBtn.disabled = lock;
-
-      w60.disabled = lock;
-      w30.disabled = lock;
-      w10.disabled = lock;
-      softStart.disabled = lock;
-
-      profileSelect.disabled = lock;
-      newProfileBtn.disabled = lock;
-      saveProfileBtn.disabled = lock;
-      renameProfileBtn.disabled = lock;
-      deleteProfileBtn.disabled = lock;
-      exportBtn.disabled = lock;
-      importBtn.disabled = lock;
-      resetBtn.disabled = lock;
+      t2.disabled = lock;
+      t5.disabled = lock;
+      t10.disabled = lock;
     }
 
     function setDurationMinutes(min){
-      intervalMin = clampInt(min, 2, 60);
-      profile.durationMin = intervalMin;
+      intervalMin = clampInt(min, 2, 10);
+      state.durationMin = intervalMin;
       durationMs = intervalMin * 60 * 1000;
-
       intervalLabel.textContent = `${intervalMin} min`;
-      customLabel.textContent = `${intervalMin} min`;
       if (!running) timeEl.textContent = fmtMMSS(durationMs);
+      saveState();
 
-      saveActiveProfile();
+      t2.classList.toggle("primary", intervalMin === 2);
+      t5.classList.toggle("primary", intervalMin === 5);
+      t10.classList.toggle("primary", intervalMin === 10);
+
       setToast(`Time set to ${intervalMin} minutes.`);
+    }
+
+    function buildModeChecks(){
+      modeChecks.innerHTML = "";
+      for (const k of MODE_KEYS){
+        const id = "cb_" + cssKey(k);
+        const dotColor = (k === "Group 1") ? "#1e5aa8" : (k === "Group 2") ? "#f08a1a" : "#2e7d32";
+        const checked = state.enabled[k] ? "checked" : "";
+        const wrap = document.createElement("div");
+        wrap.className = "chip";
+        wrap.innerHTML = `
+          <label>
+            <input type="checkbox" id="${id}" ${checked}>
+            <span class="dot" style="background:${dotColor}"></span>
+            <span><b>${k}</b></span>
+          </label>
+        `;
+        modeChecks.appendChild(wrap);
+
+        el(id).onchange = () => {
+          state.enabled[k] = el(id).checked;
+          saveState();
+          if (!running) refreshIdleView();
+        };
+      }
+    }
+
+    function refreshIdleView(){
+      const rot = buildRotation();
+      if (rot.length === 0){
+        badge.textContent = "IDLE";
+        modeEl.textContent = "Select groups";
+        timeEl.textContent = "--:--";
+        nextEl.textContent = "NEXT UP: --";
+        subEl.textContent = "Pick at least one group.";
+        setBlink(false);
+        resetCar();
+        stage.style.background = "rgba(0,0,0,.15)";
+        startBtn.disabled = true;
+        return;
+      }
+
+      startBtn.disabled = false;
+
+      const firstKey = rot[0];
+      const nextKey = (rot.length === 1) ? firstKey : rot[1];
+
+      badge.textContent = "IDLE";
+      modeEl.textContent = firstKey;
+      timeEl.textContent = fmtMMSS(durationMs);
+      nextEl.textContent = `NEXT UP: ${nextKey}`;
+      subEl.textContent = `${intervalMin} min slot`;
+
+      applyStageTheme(firstKey);
+      setBlink(false);
+      resetCar();
     }
 
     function clearCountdown(){
       if (countdownTimer){
-        clearTimeout(countdownTimer);
+        clearInterval(countdownTimer);
         countdownTimer = null;
       }
-      inCountdown = false;
     }
 
-    function beginHeatTimer(){
-      warned60 = warned30 = warned10 = false;
-      setBlink(false);
-
-      slotStartedAt = Date.now();
-      slotEndsAt = slotStartedAt + durationMs;
-
-      tick();
-      tickTimer = setInterval(tick, 80);
-    }
-
-    // Soft start: SAY group + duration at start of slot (requested)
-    function doSoftStartThenRun(currentKey){
-      inCountdown = true;
-      badge.textContent = "GET READY";
-      subEl.textContent = "Soft start";
-      resetCar();
-      startCarEffects();
-
-      speak(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
-
-      const steps = [3,2,1];
-      let i = 0;
-
-      const step = () => {
-        if (!running) return;
-        const n = steps[i];
-        timeEl.textContent = "00:0" + n;
-        speak(String(n));
-        i++;
-        if (i < steps.length){
-          countdownTimer = setTimeout(step, 900);
-        } else {
-          countdownTimer = setTimeout(() => {
-            if (!running) return;
-            speak("Go");
-            clearCountdown();
-            beginHeatTimer();
-          }, 900);
-        }
-      };
-
-      timeEl.textContent = "00:03";
-      countdownTimer = setTimeout(step, 950);
-    }
-
-    function startSlot(){
+    async function startSlot(){
       const currentKey = rotation[idx];
       const nextKey = getNextKey();
 
       applyStageTheme(currentKey);
 
       badge.textContent = "RUNNING";
-      statusEl.textContent = `Running: ${labelFor(currentKey)}`;
+      statusEl.textContent = `Running: ${currentKey}`;
 
-      modeEl.textContent = labelFor(currentKey);
-      nextEl.textContent = `NEXT UP: ${labelFor(nextKey)}`;
+      modeEl.textContent = currentKey;
+      nextEl.textContent = `NEXT UP: ${nextKey}`;
       subEl.textContent = `${intervalMin} min slot`;
 
       resetCar();
       startCarEffects();
 
-      if (profile.warnings.softStart){
-        doSoftStartThenRun(currentKey);
-      } else {
-        speak(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
-        beginHeatTimer();
+      warned60 = false;
+      warned10 = false;
+      clearCountdown();
+      setBlink(false);
+
+      // Tala slot-start utan krock: Group + duration, i kö
+      await speakQueued(`${currentKey}. ${intervalMin} minutes.`);
+      beginHeatTimer();
+    }
+
+    function beginHeatTimer(){
+      slotStartedAt = Date.now();
+      slotEndsAt = slotStartedAt + durationMs;
+      tick();
+      tickTimer = setInterval(tick, 80);
+    }
+
+    async function speakCountdown10(){
+      // 10..1 i kö, så det inte krockar
+      for (let n = 10; n >= 1; n--){
+        if (!running) return;
+        await speakQueued(String(n));
       }
     }
 
     function tick(){
-      if (inCountdown) return;
-
       const now = Date.now();
       const remaining = slotEndsAt - now;
 
@@ -1033,37 +758,43 @@
       setCarProgress(now);
 
       if (remaining > 0){
-        if (profile.warnings.s60 && !warned60 && remaining <= 60*1000){
+        // 1-minut varning + GET READY
+        if (!warned60 && remaining <= 60*1000){
           warned60 = true;
           const nextKey = getNextKey();
-          speak(`One minute left. ${voiceTextFor(nextKey)}, get ready`);
+          badge.textContent = "GET READY";
+          subEl.textContent = "1 minute remaining";
           setBlink(true);
+          // Kör voice i bakgrunden via queue (utan att stoppa tick)
+          speakQueued(`One minute left. Next up: ${nextKey}. Get ready.`);
         }
-        if (profile.warnings.s30 && !warned30 && remaining <= 30*1000){
-          warned30 = true;
-          speak("Thirty seconds");
-        }
-        if (profile.warnings.s10 && !warned10 && remaining <= 10*1000){
+
+        // 10 sek kvar: röst-countdown (10..1)
+        if (!warned10 && remaining <= 10*1000){
           warned10 = true;
-          speak("Ten seconds");
+          // starta countdown en gång
+          speakQueued("Ten seconds");
+          // om du vill ha riktiga 10..1:
+          speakCountdown10();
         }
       }
 
       if (remaining <= 0) endSlot();
     }
 
-    function endSlot(){
+    async function endSlot(){
       if (tickTimer){
         clearInterval(tickTimer);
         tickTimer = null;
       }
       clearCountdown();
+      setBlink(false);
 
       carEl.style.left = "100%";
       stopCarEffects();
 
       const currentKey = rotation[idx];
-      speak(`${voiceTextFor(currentKey)} training end`);
+      await speakQueued(`${currentKey} training end`);
 
       idx = (idx + 1) % rotation.length;
       startSlot();
@@ -1100,8 +831,7 @@
         tickTimer = null;
       }
       clearCountdown();
-
-      try{ if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e){}
+      cancelSpeech();
 
       badge.textContent = "STOPPED";
       statusEl.textContent = "Stopped";
@@ -1118,7 +848,7 @@
       refreshIdleView();
     }
 
-    function skip(){
+    async function skip(){
       if (!running || rotation.length === 0) return;
 
       if (tickTimer){
@@ -1126,401 +856,43 @@
         tickTimer = null;
       }
       clearCountdown();
+      setBlink(false);
 
       carEl.style.left = "100%";
       stopCarEffects();
 
       const currentKey = rotation[idx];
-      speak(`${voiceTextFor(currentKey)} training end`);
+      await speakQueued(`${currentKey} training end`);
 
       idx = (idx + 1) % rotation.length;
       startSlot();
     }
 
-    // Profiles UI
-    function rebuildProfileSelect(){
-      profileSelect.innerHTML = "";
-      const entries = Object.entries(store.profiles);
-      entries.sort((a,b) => String(a[1]?.name||"").localeCompare(String(b[1]?.name||"")));
-      for (const [id, p] of entries){
-        const opt = document.createElement("option");
-        opt.value = id;
-        opt.textContent = p?.name || "Unnamed";
-        profileSelect.appendChild(opt);
-      }
-      profileSelect.value = activeId;
+    function hideSplash(){
+      splash.classList.add("hide");
+      setTimeout(() => { splash.style.display = "none"; }, 450);
     }
 
-    function switchToProfile(id){
-      const p0 = store.profiles[id];
-      if (!p0) return;
-      activeId = id;
-
-      profile = sanitizeProfile(p0);
-      store.profiles[activeId] = profile;
-      saveStore();
-
-      intervalMin = clampInt(profile.durationMin, 2, 60);
-      durationMs = intervalMin * 60 * 1000;
-
-      w60.checked = !!profile.warnings.s60;
-      w30.checked = !!profile.warnings.s30;
-      w10.checked = !!profile.warnings.s10;
-      softStart.checked = !!profile.warnings.softStart;
-
-      customMin.value = String(intervalMin);
-      intervalLabel.textContent = `${intervalMin} min`;
-      customLabel.textContent = `${intervalMin} min`;
-
-      buildModeChecks();
-      buildModeSettings();
-      refreshIdleView();
-      saveActiveProfile();
-    }
-
-    function promptName(msg, fallback){
-      const name = prompt(msg, fallback || "");
-      if (name === null) return null;
-      const n = String(name).trim().slice(0, 24);
-      return n.length ? n : null;
-    }
-
-    function exportConfig(){
-      const payload = { v: 3, profile };
-      const txt = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      prompt("Copy this config string:", txt);
-    }
-
-    function sanitizeProfile(p){
-      const base = DEFAULT_PROFILE();
-
-      base.name = String(p?.name || base.name).slice(0,24);
-      base.durationMin = clampInt(p?.durationMin, 2, 60);
-
-      // If older version used other keys, we still only allow Group 1..6 here
-      base.enabled = { ...base.enabled, ...(p?.enabled || {}) };
-      base.warnings = { ...base.warnings, ...(p?.warnings || {}) };
-
-      for (const k of MODE_KEYS){
-        base.modes[k] = { ...base.modes[k], ...((p?.modes||{})[k] || {}) };
-
-        // Label is the single source of truth
-        base.modes[k].label = String(base.modes[k].label || k).trim().slice(0,20) || k;
-
-        base.modes[k].weight = clampInt(base.modes[k].weight, 1, 20);
-        base.modes[k].twoTone = !!base.modes[k].twoTone;
-        base.modes[k].split = (base.modes[k].split === "tb") ? "tb" : "lr";
-        base.modes[k].c1 = String(base.modes[k].c1 || "#000000");
-        base.modes[k].c2 = String(base.modes[k].c2 || "#000000");
-      }
-      return base;
-    }
-
-    function importConfig(){
-      const txt = prompt("Paste config string here:");
-      if (!txt) return;
-      try{
-        const raw = decodeURIComponent(escape(atob(txt)));
-        const parsed = JSON.parse(raw);
-
-        // accept v2 or v3, normalize to current
-        if (!parsed || (!parsed.profile) || (parsed.v !== 2 && parsed.v !== 3)) throw new Error("bad");
-
-        const id = uid();
-        const p = sanitizeProfile(parsed.profile);
-        store.profiles[id] = p;
-        saveStore();
-        rebuildProfileSelect();
-        switchToProfile(id);
-        setProfileToast("Imported.");
-      } catch {
-        setProfileToast("Import failed.");
-      }
-      setTimeout(() => setProfileToast(""), 1200);
-    }
-
-    // Mode checks + settings
-    function escapeHtml(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function escapeAttr(s){ return escapeHtml(s); }
-
-    function buildModeChecks(){
-      modeChecks.innerHTML = "";
-      for (const k of MODE_KEYS){
-        const id = "cb_" + cssKey(k);
-        const dotColor = profile.modes[k].c1 || "#999999";
-        const checked = profile.enabled[k] ? "checked" : "";
-
-        const wrap = document.createElement("div");
-        wrap.className = "chip";
-        wrap.innerHTML = `
-          <label>
-            <input type="checkbox" id="${id}" ${checked}>
-            <span class="dot" style="background:${dotColor}"></span>
-            <span><b>${escapeHtml(profile.modes[k].label || k)}</b></span>
-          </label>
-        `;
-        modeChecks.appendChild(wrap);
-
-        el(id).onchange = () => {
-          profile.enabled[k] = el(id).checked;
-          saveActiveProfile();
-          if (!running) refreshIdleView();
-        };
-      }
-    }
-
-    function buildModeSettings(){
-      modeSettings.innerHTML = "";
-      for (const k of MODE_KEYS){
-        const m = profile.modes[k];
-        const block = document.createElement("details");
-        block.dataset.mode = cssKey(k);
-
-        block.innerHTML = `
-          <summary>${escapeHtml(m.label || k)} settings</summary>
-          <div class="modeForm">
-            <div class="field">
-              <label>Label on screen (also used for voice)</label>
-              <input type="text" value="${escapeAttr(m.label || "")}" data-field="label">
-            </div>
-
-            <div class="field">
-              <label>Weight (how often in rotation)</label>
-              <input type="number" min="1" max="20" step="1" value="${escapeAttr(m.weight ?? 1)}" data-field="weight">
-            </div>
-
-            <div class="inline2">
-              <div class="field">
-                <label>Color 1</label>
-                <input type="color" value="${escapeAttr(m.c1 || "#000000")}" data-field="c1">
-              </div>
-              <div class="field">
-                <label>Color 2</label>
-                <input type="color" value="${escapeAttr(m.c2 || "#000000")}" data-field="c2">
-              </div>
-            </div>
-
-            <div class="toggleRow">
-              <span>Use 2 colors</span>
-              <input type="checkbox" ${m.twoTone ? "checked" : ""} data-field="twoTone">
-            </div>
-
-            <div class="field">
-              <label>Split direction</label>
-              <select class="select" data-field="split">
-                <option value="lr" ${m.split==="lr" ? "selected":""}>Left / Right</option>
-                <option value="tb" ${m.split==="tb" ? "selected":""}>Top / Bottom</option>
-              </select>
-            </div>
-          </div>
-        `;
-
-        modeSettings.appendChild(block);
-
-        const inputs = block.querySelectorAll("input, select");
-        inputs.forEach(inp => {
-          inp.addEventListener("input", () => {
-            const field = inp.dataset.field;
-            if (!field) return;
-
-            if (field === "twoTone"){
-              m.twoTone = !!inp.checked;
-            } else if (field === "split"){
-              m.split = String(inp.value || "lr");
-            } else if (field === "label"){
-              m.label = String(inp.value || "").trim().slice(0, 20) || k;
-            } else if (field === "weight"){
-              m.weight = clampInt(inp.value, 1, 20);
-              inp.value = String(m.weight);
-            } else if (field === "c1"){
-              m.c1 = String(inp.value || "#000000");
-            } else if (field === "c2"){
-              m.c2 = String(inp.value || "#000000");
-            }
-
-            saveActiveProfile();
-            buildModeChecks();
-            buildModeSettings();
-            if (!running) refreshIdleView();
-          });
-        });
-      }
-    }
-
-    function refreshIdleView(){
-      const rot = buildRotation();
-      if (rot.length === 0){
-        badge.textContent = "IDLE";
-        modeEl.textContent = "Select groups";
-        timeEl.textContent = "--:--";
-        nextEl.textContent = "NEXT UP: --";
-        subEl.textContent = "Pick at least one group.";
-        setBlink(false);
-        resetCar();
-        stage.style.background = "rgba(0,0,0,.15)";
-        document.documentElement.style.setProperty("--stageFg", "#ffffff");
-        startBtn.disabled = true;
-        return;
-      }
-
-      startBtn.disabled = false;
-
-      const firstKey = rot[0];
-      const nextKey = (rot.length === 1) ? firstKey : rot[1];
-
-      badge.textContent = "IDLE";
-      modeEl.textContent = labelFor(firstKey);
-      timeEl.textContent = fmtMMSS(durationMs);
-      nextEl.textContent = `NEXT UP: ${labelFor(nextKey)}`;
-      subEl.textContent = `${intervalMin} min slot`;
-
-      applyStageTheme(firstKey);
-      setBlink(false);
-      resetCar();
-    }
-
-    // Fullscreen
-    async function toggleFullscreen(){
-      try{
-        if (!document.fullscreenElement){
-          await document.documentElement.requestFullscreen?.();
-        } else {
-          await document.exitFullscreen?.();
-        }
-      } catch(e){}
-    }
+    enterBtn.onclick = async () => {
+      cancelSpeech();
+      await speakQueued("Voice enabled");
+      hideSplash();
+    };
 
     // Events
-    customMin.oninput = () => setDurationMinutes(customMin.value);
-
-    w60.onchange = () => { profile.warnings.s60 = !!w60.checked; saveActiveProfile(); };
-    w30.onchange = () => { profile.warnings.s30 = !!w30.checked; saveActiveProfile(); };
-    w10.onchange = () => { profile.warnings.s10 = !!w10.checked; saveActiveProfile(); };
-    softStart.onchange = () => { profile.warnings.softStart = !!softStart.checked; saveActiveProfile(); };
-
     startBtn.onclick = start;
     stopBtn.onclick = stop;
     stopRunBtn.onclick = stop;
     skipRunBtn.onclick = skip;
 
-    testVoiceBtn.onclick = () => {
-      speak("Test voice. time slash sloth pro.");
-      setToast("If you heard that, voice is working.");
-    };
-
-    fsBtn.onclick = toggleFullscreen;
-    fsBtnRun.onclick = toggleFullscreen;
-
-    profileSelect.onchange = () => {
-      if (running) return;
-      switchToProfile(profileSelect.value);
-    };
-
-    newProfileBtn.onclick = () => {
-      if (running) return;
-      const name = promptName("Profile name:", "New profile");
-      if (!name) return;
-      const id = uid();
-      const p = sanitizeProfile(profile);
-      p.name = name;
-      store.profiles[id] = p;
-      saveStore();
-      rebuildProfileSelect();
-      switchToProfile(id);
-      setProfileToast("Created.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    saveProfileBtn.onclick = () => {
-      if (running) return;
-      saveActiveProfile();
-      setProfileToast("Saved.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    renameProfileBtn.onclick = () => {
-      if (running) return;
-      const name = promptName("New profile name:", profile.name || "Profile");
-      if (!name) return;
-      profile.name = name;
-      saveActiveProfile();
-      saveStore();
-      rebuildProfileSelect();
-      setProfileToast("Renamed.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    deleteProfileBtn.onclick = () => {
-      if (running) return;
-      if (Object.keys(store.profiles).length <= 1){
-        setProfileToast("Can't delete last profile.");
-        setTimeout(() => setProfileToast(""), 1200);
-        return;
-      }
-      if (!confirm(`Delete profile "${profile.name}"?`)) return;
-
-      delete store.profiles[activeId];
-      const nextId = Object.keys(store.profiles)[0];
-      store.activeId = nextId;
-      saveStore();
-      rebuildProfileSelect();
-      switchToProfile(nextId);
-
-      setProfileToast("Deleted.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    exportBtn.onclick = () => { if (!running) exportConfig(); };
-    importBtn.onclick = () => { if (!running) importConfig(); };
-
-    resetBtn.onclick = () => {
-      if (running) return;
-      if (!confirm("Reset current profile to defaults?")) return;
-      const keepName = profile.name || "Default";
-      profile = DEFAULT_PROFILE();
-      profile.name = keepName;
-      store.profiles[activeId] = profile;
-      saveStore();
-      switchToProfile(activeId);
-      setProfileToast("Reset.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    function hideSplash(){
-      splash.classList.add("hide");
-      setTimeout(() => { splash.style.display = "none"; }, 450);
-    }
-    enterBtn.onclick = () => {
-      speak("Voice enabled");
-      setTimeout(() => { try { speechSynthesis.getVoices?.(); } catch(e){} }, 200);
-      hideSplash();
-    };
+    t2.onclick = () => setDurationMinutes(2);
+    t5.onclick = () => setDurationMinutes(5);
+    t10.onclick = () => setDurationMinutes(10);
 
     // Init
-    rebuildProfileSelect();
-
-    w60.checked = !!profile.warnings.s60;
-    w30.checked = !!profile.warnings.s30;
-    w10.checked = !!profile.warnings.s10;
-    softStart.checked = !!profile.warnings.softStart;
-
-    customMin.value = String(intervalMin);
-    intervalLabel.textContent = `${intervalMin} min`;
-    customLabel.textContent = `${intervalMin} min`;
-
     buildModeChecks();
-    buildModeSettings();
+    setDurationMinutes(state.durationMin || 5);
     refreshIdleView();
   </script>
 </body>
 </html>
-
-
-

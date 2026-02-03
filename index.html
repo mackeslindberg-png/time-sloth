@@ -553,7 +553,7 @@
     <div class="panel" id="settingsPanel">
       <div class="row">
         <div class="small"><b>Group settings</b></div>
-        <div class="small">Label + Voice + Colors + Weight</div>
+        <div class="small">Label + Colors + Weight</div>
       </div>
       <div class="grid" style="margin-top:10px; gap:10px;" id="modeSettings"></div>
     </div>
@@ -650,19 +650,20 @@
     const importBtn = el("importBtn");
     const resetBtn = el("resetBtn");
 
-    // === GROUPS 1-6 ===
+    // === GROUPS 1-6 (requested) ===
     const MODE_KEYS = ["Group 1","Group 2","Group 3","Group 4","Group 5","Group 6"];
 
-    // New storage key so old FWD/GT profiles won't conflict
+    // New storage key so old profiles won't conflict
     const LS_KEY = "ts_pro_profiles_groups_v1";
 
+    // Voice text: always uses Label on screen (no separate voice field)
     const DEFAULT_MODE = {
-      "Group 1": { label:"Group 1", voice:"Group 1", weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
-      "Group 2": { label:"Group 2", voice:"Group 2", weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00" },
-      "Group 3": { label:"Group 3", voice:"Group 3", weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" },
-      "Group 4": { label:"Group 4", voice:"Group 4", weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40" },
-      "Group 5": { label:"Group 5", voice:"Group 5", weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f" },
-      "Group 6": { label:"Group 6", voice:"Group 6", weight:1, twoTone:false, split:"lr", c1:"#455a64", c2:"#1c262b" }
+      "Group 1": { label:"Group 1", weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
+      "Group 2": { label:"Group 2", weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00" },
+      "Group 3": { label:"Group 3", weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" },
+      "Group 4": { label:"Group 4", weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40" },
+      "Group 5": { label:"Group 5", weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f" },
+      "Group 6": { label:"Group 6", weight:1, twoTone:false, split:"lr", c1:"#455a64", c2:"#1c262b" }
     };
 
     const DEFAULT_PROFILE = () => ({
@@ -683,6 +684,11 @@
     let store = loadStore();
     let activeId = store.activeId;
     let profile = store.profiles[activeId] || DEFAULT_PROFILE();
+
+    // Ensure any legacy profile still speaks label (and has proper group keys)
+    profile = sanitizeProfile(profile);
+    store.profiles[activeId] = profile;
+    saveStore();
 
     let intervalMin = clampInt(profile.durationMin, 2, 60);
     let durationMs = intervalMin * 60 * 1000;
@@ -758,7 +764,6 @@
       return Math.max(a, Math.min(b, Math.round(n)));
     }
 
-    // IMPORTANT: handle spaces now
     function cssKey(k){
       return String(k).replaceAll("/","_").replaceAll(" ","_");
     }
@@ -871,12 +876,12 @@
       carEl.classList.remove("bounce");
     }
 
-    function voiceTextFor(key){
-      const v = (profile.modes[key]?.voice || profile.modes[key]?.label || key || "").trim();
-      return v.length ? v : key;
-    }
+    // Voice always matches screen label
     function labelFor(key){
       return (profile.modes[key]?.label || key);
+    }
+    function voiceTextFor(key){
+      return labelFor(key);
     }
 
     // Rotation with weight
@@ -959,8 +964,7 @@
       tickTimer = setInterval(tick, 80);
     }
 
-    // Soft start without voice overlap:
-    // Speak group name first, then after a short delay start 3..2..1
+    // Soft start: SAY group + duration at start of slot (requested)
     function doSoftStartThenRun(currentKey){
       inCountdown = true;
       badge.textContent = "GET READY";
@@ -968,7 +972,7 @@
       resetCar();
       startCarEffects();
 
-      speak(`${voiceTextFor(currentKey)}`);
+      speak(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
 
       const steps = [3,2,1];
       let i = 0;
@@ -1148,10 +1152,13 @@
     }
 
     function switchToProfile(id){
-      const p = store.profiles[id];
-      if (!p) return;
+      const p0 = store.profiles[id];
+      if (!p0) return;
       activeId = id;
-      profile = p;
+
+      profile = sanitizeProfile(p0);
+      store.profiles[activeId] = profile;
+      saveStore();
 
       intervalMin = clampInt(profile.durationMin, 2, 60);
       durationMs = intervalMin * 60 * 1000;
@@ -1179,23 +1186,27 @@
     }
 
     function exportConfig(){
-      const payload = { v: 2, profile };
+      const payload = { v: 3, profile };
       const txt = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
       prompt("Copy this config string:", txt);
     }
 
     function sanitizeProfile(p){
       const base = DEFAULT_PROFILE();
-      base.name = String(p.name || base.name).slice(0,24);
-      base.durationMin = clampInt(p.durationMin, 2, 60);
 
-      base.enabled = { ...base.enabled, ...(p.enabled || {}) };
-      base.warnings = { ...base.warnings, ...(p.warnings || {}) };
+      base.name = String(p?.name || base.name).slice(0,24);
+      base.durationMin = clampInt(p?.durationMin, 2, 60);
+
+      // If older version used other keys, we still only allow Group 1..6 here
+      base.enabled = { ...base.enabled, ...(p?.enabled || {}) };
+      base.warnings = { ...base.warnings, ...(p?.warnings || {}) };
 
       for (const k of MODE_KEYS){
-        base.modes[k] = { ...base.modes[k], ...((p.modes||{})[k] || {}) };
-        base.modes[k].label = String(base.modes[k].label || k).slice(0,20);
-        base.modes[k].voice = String(base.modes[k].voice || k).slice(0,60);
+        base.modes[k] = { ...base.modes[k], ...((p?.modes||{})[k] || {}) };
+
+        // Label is the single source of truth
+        base.modes[k].label = String(base.modes[k].label || k).trim().slice(0,20) || k;
+
         base.modes[k].weight = clampInt(base.modes[k].weight, 1, 20);
         base.modes[k].twoTone = !!base.modes[k].twoTone;
         base.modes[k].split = (base.modes[k].split === "tb") ? "tb" : "lr";
@@ -1211,7 +1222,10 @@
       try{
         const raw = decodeURIComponent(escape(atob(txt)));
         const parsed = JSON.parse(raw);
-        if (!parsed || parsed.v !== 2 || !parsed.profile) throw new Error("bad");
+
+        // accept v2 or v3, normalize to current
+        if (!parsed || (!parsed.profile) || (parsed.v !== 2 && parsed.v !== 3)) throw new Error("bad");
+
         const id = uid();
         const p = sanitizeProfile(parsed.profile);
         store.profiles[id] = p;
@@ -1273,13 +1287,8 @@
           <summary>${escapeHtml(m.label || k)} settings</summary>
           <div class="modeForm">
             <div class="field">
-              <label>Label on screen</label>
+              <label>Label on screen (also used for voice)</label>
               <input type="text" value="${escapeAttr(m.label || "")}" data-field="label">
-            </div>
-
-            <div class="field">
-              <label>Voice text</label>
-              <input type="text" value="${escapeAttr(m.voice || "")}" data-field="voice">
             </div>
 
             <div class="field">
@@ -1327,8 +1336,6 @@
               m.split = String(inp.value || "lr");
             } else if (field === "label"){
               m.label = String(inp.value || "").trim().slice(0, 20) || k;
-            } else if (field === "voice"){
-              m.voice = String(inp.value || "").trim().slice(0, 60) || m.label || k;
             } else if (field === "weight"){
               m.weight = clampInt(inp.value, 1, 20);
               inp.value = String(m.weight);
@@ -1514,5 +1521,6 @@
   </script>
 </body>
 </html>
+
 
 

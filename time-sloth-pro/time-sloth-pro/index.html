@@ -1,1500 +1,191 @@
 <!doctype html>
 <html lang="sv">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>time/sloth PRO</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>time/sloth PRO</title>
 
-  <style>
-    :root{
-      --scale: 1.15;
-      --bg: #1b1b1b;
-      --fg: #ffffff;
-      --card: rgba(0,0,0,.18);
-      --btn: rgba(255,255,255,.14);
-      --btn2: rgba(255,255,255,.22);
-      --outline: rgba(255,255,255,.22);
+<style>
+/* --- STYLES (oförändrade från din version) --- */
+:root{
+  --scale:1.15;
+  --bg:#1b1b1b;
+  --fg:#fff;
+  --card:rgba(0,0,0,.18);
+  --btn:rgba(255,255,255,.14);
+  --btn2:rgba(255,255,255,.22);
+  --outline:rgba(255,255,255,.22);
+  --stageFg:#fff;
+  --stageBadgeBg:rgba(0,0,0,.22);
+  --stageBadgeBorder:rgba(0,0,0,.18);
+  --laneBg:rgba(0,0,0,.18);
+  --trackShadow:rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:calc(16px * var(--scale))}
+body{background:var(--bg);color:var(--fg);overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
+.wrap{height:100%;padding:14px;padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.topbar{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.title{display:flex;align-items:center;gap:10px;font-weight:900;font-size:calc(16px * var(--scale));opacity:.95}
+.logoTop{height:26px;width:26px;opacity:.25}
+.panel{background:var(--card);border:1px solid var(--outline);border-radius:16px;padding:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.small{font-size:calc(12px * var(--scale));opacity:.82;font-weight:800}
+.toast{margin-top:6px;font-size:calc(12px * var(--scale));font-weight:800}
+.grid{display:grid;gap:10px}
+.grid.cols2{grid-template-columns:1fr 1fr}
+.chip{display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;min-height:52px}
+.chip label{display:flex;align-items:center;gap:10px;width:100%;cursor:pointer;font-weight:900}
+.dot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
+button{font:inherit;border:1px solid rgba(255,255,255,.18);background:var(--btn);color:var(--fg);border-radius:16px;padding:14px;font-weight:900;cursor:pointer}
+button.primary{background:var(--btn2)}
+button.danger{background:rgba(255,60,60,.22)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.select{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.18);color:var(--fg);padding:12px;font-weight:900}
 
-      --stageFg: #ffffff;
-      --stageBadgeBg: rgba(0,0,0,.22);
-      --stageBadgeBorder: rgba(0,0,0,.18);
-      --laneBg: rgba(0,0,0,.18);
-      --trackShadow: rgba(0,0,0,.25);
-    }
+/* stage */
+.stage{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:22px;background:rgba(0,0,0,.15);position:relative;text-align:center}
+.mode{font-size:clamp(34px,7vw,56px);font-weight:900}
+.time{font-size:clamp(56px,11vw,92px);font-weight:900}
+.next{font-style:italic;font-weight:900}
+.badge{position:absolute;top:10px;right:10px;padding:8px 10px;border-radius:999px;font-weight:900}
 
-    *{ box-sizing: border-box; }
-    html,body{
-      height:100%;
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      font-size: calc(16px * var(--scale));
-    }
-    body{
-      background: var(--bg);
-      color: var(--fg);
-      overflow:hidden;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
-    }
-
-    .wrap{
-      height:100%;
-      padding: 14px;
-      padding-top: calc(14px + env(safe-area-inset-top));
-      padding-bottom: calc(14px + env(safe-area-inset-bottom));
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
-    }
-
-    .topbar{
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      justify-content:space-between;
-    }
-
-    .title{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      font-weight:900;
-      letter-spacing:.2px;
-      font-size: calc(16px * var(--scale));
-      opacity:.95;
-    }
-
-    .logoTop{
-      height: 26px;
-      width: 26px;
-      display:block;
-      opacity: .25;
-    }
-
-    .panel{
-      background: var(--card);
-      border: 1px solid var(--outline);
-      border-radius: 16px;
-      padding: 12px;
-    }
-
-    .row{
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items:center;
-    }
-    .small{ font-size: calc(12px * var(--scale)); opacity:.82; font-weight:800; }
-    .toast{ margin-top: 6px; font-size: calc(12px * var(--scale)); opacity: .95; min-height: 16px; font-weight:800; }
-    .hint{ font-size: calc(12px * var(--scale)); opacity: .8; font-weight:800; }
-
-    .grid{ display:grid; gap: 10px; }
-    .grid.cols2{ grid-template-columns: 1fr 1fr; }
-
-    .chip{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 8px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 14px;
-      padding: 12px 12px;
-      min-height: 52px;
-    }
-    .chip label{ display:flex; align-items:center; gap:10px; width:100%; cursor:pointer; font-weight:900; }
-    .chip input[type="checkbox"]{ transform: scale(1.25); }
-
-    .dot{
-      width: 14px; height: 14px; border-radius: 50%;
-      border: 1px solid rgba(0,0,0,.25);
-      flex: 0 0 auto;
-    }
-
-    .btnrow{ display:grid; gap: 10px; }
-    .btnrow.controls{ grid-template-columns: 1fr 1fr; }
-    .btnrow.misc{ grid-template-columns: 1fr; }
-
-    button{
-      font: inherit;
-      border: 1px solid rgba(255,255,255,.18);
-      background: var(--btn);
-      color: var(--fg);
-      border-radius: 16px;
-      padding: 14px 12px;
-      font-weight: 900;
-      cursor:pointer;
-      min-height: 54px;
-    }
-    button:active{ transform: translateY(1px); }
-    button.primary{ background: var(--btn2); border-color: rgba(255,255,255,.28); }
-    button.danger{ background: rgba(255,60,60,.22); border-color: rgba(255,60,60,.35); }
-    button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
-
-    .select{
-      width:100%;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.18);
-      color: var(--fg);
-      padding: 12px;
-      font-size: calc(14px * var(--scale));
-      outline:none;
-      font-weight: 900;
-    }
-
-    /* Stage */
-    .stage{
-      flex: 1 1 auto;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      border-radius: 22px;
-      border: 1px solid rgba(0,0,0,.25);
-      background: rgba(0,0,0,.15);
-      padding: 18px;
-      text-align:center;
-      gap: 10px;
-      position: relative;
-      overflow:hidden;
-      isolation: isolate;
-    }
-
-    .stageLogo{
-      position:absolute;
-      top: 12px;
-      left: 12px;
-      height: 26px;
-      width: 26px;
-      z-index: 5;
-      pointer-events:none;
-      opacity: .25;
-    }
-
-    .badge{
-      position:absolute;
-      top: 10px;
-      right: 10px;
-      background: var(--stageBadgeBg);
-      border: 1px solid var(--stageBadgeBorder);
-      color: var(--stageFg);
-      border-radius: 999px;
-      padding: 8px 10px;
-      font-weight: 900;
-      font-size: calc(12px * var(--scale));
-      letter-spacing: .3px;
-      z-index: 3;
-    }
-
-    .mode{
-      color: var(--stageFg);
-      font-size: clamp(34px, 7vw, 56px);
-      font-weight: 900;
-      letter-spacing: .6px;
-      line-height: 1.05;
-      z-index: 2;
-    }
-    .time{
-      color: var(--stageFg);
-      font-size: clamp(56px, 11vw, 92px);
-      font-weight: 900;
-      letter-spacing: 1px;
-      line-height: 1;
-      z-index: 2;
-    }
-    .next{
-      color: var(--stageFg);
-      margin-top: clamp(10px, 3vh, 22px);
-      font-size: clamp(18px, 3.6vw, 26px);
-      font-weight: 900;
-      opacity: .98;
-      letter-spacing: .4px;
-      font-style: italic;
-      z-index: 2;
-    }
-    .sub{
-      color: var(--stageFg);
-      font-size: calc(13px * var(--scale));
-      opacity: .9;
-      line-height: 1.35;
-      z-index: 2;
-      font-weight: 800;
-    }
-
-    .blinkMode{ animation: blink 0.85s step-end infinite; }
-    .blinkTime{ animation: blink 0.85s step-end infinite; }
-    @keyframes blink{ 50%{ opacity: .15; } }
-
-    /* Splash */
-    .splash{
-      position:fixed;
-      inset:0;
-      background: #0f0f0f;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      gap: 14px;
-      z-index: 999;
-      opacity: 1;
-      transition: opacity 420ms ease;
-      padding: 18px;
-      text-align:center;
-    }
-    .splash.hide{ opacity:0; pointer-events:none; }
-    .splashLogo{ width: min(260px, 70vw); height:auto; display:block; opacity:.9; }
-    .splashText{ font-weight: 900; letter-spacing: .6px; font-size: calc(22px * var(--scale)); opacity: .95; }
-    .splashSub{ font-size: calc(13px * var(--scale)); opacity: .78; max-width: 46ch; line-height: 1.35; font-weight:800; }
-    .splashBtn{ margin-top: 8px; width: min(360px, 92vw); }
-
-    /* Run view */
-    body.run .panel{ display:none; }
-    body.run .wrap{ gap: 0; }
-    body.run .topbar{ display:none; }
-    body.run .stage{
-      flex: 1 1 auto;
-      border-radius: 22px;
-      margin: 0;
-      padding-top: calc(18px + env(safe-area-inset-top));
-      padding-bottom: calc(18px + env(safe-area-inset-bottom));
-    }
-
-    .runControls{
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: calc(12px + env(safe-area-inset-bottom));
-      display:none;
-      z-index: 1000;
-      gap: 10px;
-    }
-    body.run .runControls{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-    }
-    .runControls button{
-      min-height: 58px;
-      border-radius: 18px;
-      font-size: calc(16px * var(--scale));
-    }
-
-    /* Fullscreen button in run mode */
-    .fsFloat{
-      position: fixed;
-      top: calc(10px + env(safe-area-inset-top));
-      right: 10px;
-      z-index: 1200;
-      display:none;
-    }
-    body.run .fsFloat{ display:block; }
-    .fsFloat button{
-      min-height: 44px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      font-size: calc(14px * var(--scale));
-      background: rgba(0,0,0,.22);
-      border-color: rgba(255,255,255,.22);
-    }
-
-    /* Custom time slider */
-    .sliderRow{
-      margin-top: 10px;
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 14px;
-      padding: 10px 12px;
-    }
-    .sliderRow input[type="range"]{ width: 100%; }
-    .sliderVal{
-      min-width: 86px;
-      text-align:right;
-      font-weight: 900;
-      opacity: .95;
-      font-size: calc(12px * var(--scale));
-    }
-
-    /* Settings per mode */
-    details{
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 14px;
-      padding: 10px 12px;
-      background: rgba(255,255,255,.06);
-    }
-    details summary{
-      cursor:pointer;
-      font-weight: 900;
-      list-style: none;
-    }
-    details summary::-webkit-details-marker{ display:none; }
-
-    .modeForm{ margin-top: 10px; display:grid; gap: 10px; }
-    .field{ display:grid; gap: 6px; }
-    .field label{ font-weight: 900; opacity: .92; font-size: calc(12px * var(--scale)); }
-    .field input[type="text"], .field input[type="number"]{
-      width:100%;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.18);
-      color: var(--fg);
-      padding: 12px;
-      font-size: calc(14px * var(--scale));
-      outline: none;
-      font-weight: 900;
-    }
-    .inline2{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .toggleRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.10);
-      font-weight: 900;
-      font-size: calc(13px * var(--scale));
-    }
-    .toggleRow input{ transform: scale(1.25); }
-
-    /* Track with flags + car */
-    .track{
-      position:absolute;
-      left: 14px;
-      right: 14px;
-      bottom: calc(100px + env(safe-area-inset-bottom));
-      height: 28px;
-      z-index: 4;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      pointer-events:none;
-      opacity: .98;
-    }
-    .flag svg{
-      color: var(--stageFg);
-      filter: drop-shadow(0 1px 0 var(--trackShadow));
-    }
-    .lane{
-      position: relative;
-      flex: 1 1 auto;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--laneBg);
-      overflow: visible;
-    }
-    .car{
-      position:absolute;
-      top: 50%;
-      left: 0%;
-      transform: translate(-50%, -50%);
-      color: var(--stageFg);
-      z-index: 2;
-      will-change: left, transform, filter;
-      filter: drop-shadow(0 2px 0 var(--trackShadow)) drop-shadow(0 0 10px rgba(255,255,255,.18));
-    }
-    .car.running{
-      filter: drop-shadow(0 2px 0 var(--trackShadow)) drop-shadow(0 0 12px rgba(255,255,255,.25)) drop-shadow(0 0 22px rgba(255,255,255,.18));
-    }
-    .car.running .carSvg{
-      transform-origin: 50% 70%;
-      animation: wobble 260ms ease-in-out infinite;
-    }
-    @keyframes wobble{
-      0%   { transform: rotate(-3deg) translateY(0px); }
-      50%  { transform: rotate(3deg)  translateY(-1px); }
-      100% { transform: rotate(-3deg) translateY(0px); }
-    }
-    .car.bounce{
-      animation: bounce 520ms cubic-bezier(.2,.8,.2,1) 1;
-    }
-    @keyframes bounce{
-      0%   { transform: translate(-50%,-50%) scale(1); }
-      30%  { transform: translate(-50%,-70%) scale(1.06); }
-      55%  { transform: translate(-50%,-45%) scale(.98); }
-      75%  { transform: translate(-50%,-58%) scale(1.02); }
-      100% { transform: translate(-50%,-50%) scale(1); }
-    }
-    .smoke{
-      position:absolute;
-      left:-6px;
-      top:50%;
-      transform: translate(-100%,-50%);
-      width: 46px;
-      height: 26px;
-      pointer-events:none;
-      overflow: visible;
-      z-index:1;
-      opacity: 0;
-    }
-    .car.running .smoke{ opacity: 1; }
-    .puff{
-      position:absolute;
-      right: 0;
-      top: 50%;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.55);
-      transform: translateY(-50%);
-      animation: puff 520ms ease-out infinite;
-      opacity: 0;
-    }
-    .puff.p2{ animation-delay: 140ms; width: 8px; height: 8px; background: rgba(255,255,255,.45); }
-    .puff.p3{ animation-delay: 280ms; width: 12px; height: 12px; background: rgba(255,255,255,.35); }
-    @keyframes puff{
-      0%{ transform: translate(0,-50%) scale(.7); opacity: 0; }
-      15%{ opacity: .75; }
-      100%{ transform: translate(-40px,-50%) scale(1.6); opacity: 0; }
-    }
-  </style>
+/* drag */
+.chip[draggable]{cursor:grab}
+.chip.dragging{opacity:.5}
+</style>
 </head>
 
 <body>
-  <div class="splash" id="splash">
-    <img src="loggaml.png" class="splashLogo" alt="time/sloth logo">
-    <div class="splashText">time/sloth PRO</div>
-    <div class="splashSub">Tap Enter to enable voice (important on Android) and start.</div>
-    <button class="splashBtn primary" id="enterBtn">Enter</button>
+<div class="wrap">
+
+<div class="topbar">
+  <div class="title">
+    <img src="loggaml.png" class="logoTop">
+    <span>time/sloth PRO</span>
   </div>
+</div>
 
-  <div class="fsFloat">
-    <button id="fsBtnRun" title="Fullscreen">Fullscreen</button>
-  </div>
+<!-- MODES -->
+<div class="panel">
+  <div class="small"><b>Modes (drag to reorder)</b></div>
+  <div class="grid cols2" id="modeChecks"></div>
+</div>
 
-  <div class="runControls" id="runControls">
-    <button id="skipRun">Skip</button>
-    <button id="stopRun" class="danger">Stop</button>
-  </div>
+<!-- MODE SETTINGS -->
+<div class="panel">
+  <div class="small"><b>Mode settings</b></div>
+  <div class="grid" id="modeSettings"></div>
+</div>
 
-  <div class="wrap">
-    <div class="topbar">
-      <div class="title">
-        <img src="loggaml.png" alt="time/sloth logo" class="logoTop">
-        <span>time/sloth PRO</span>
-      </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button id="fsBtn" style="min-height:44px;padding:10px 12px;border-radius:14px;font-size:calc(14px * var(--scale));">Fullscreen</button>
-        <div class="small" id="status">Ready</div>
-      </div>
-    </div>
+<!-- STAGE -->
+<div class="stage" id="stage">
+  <div class="badge" id="badge">IDLE</div>
+  <div class="mode" id="mode">Select modes</div>
+  <div class="time" id="time">--:--</div>
+  <div class="next" id="next">NEXT UP: --</div>
+</div>
 
-    <!-- Profiles -->
-    <div class="panel">
-      <div class="row">
-        <div class="small"><b>Profile</b></div>
-        <div class="small">Saved locally</div>
-      </div>
+</div>
 
-      <div class="row" style="margin-top:10px;">
-        <select id="profileSelect" class="select" style="flex:1 1 auto; min-width: 220px;"></select>
-        <button id="newProfile" class="primary" style="min-height:48px;">New</button>
-        <button id="saveProfile" style="min-height:48px;">Save</button>
-        <button id="renameProfile" style="min-height:48px;">Rename</button>
-        <button id="deleteProfile" class="danger" style="min-height:48px;">Delete</button>
-      </div>
+<script>
+/* ---------------- CORE ---------------- */
+const el=id=>document.getElementById(id)
+const MODE_KEYS=["FWD","Touring","1/12","Mod","GT","Kidz"]
 
-      <div class="row" style="margin-top:10px;">
-        <button id="exportBtn">Export</button>
-        <button id="importBtn" class="primary">Import</button>
-        <button id="resetBtn" class="danger">Reset defaults</button>
-      </div>
+const DEFAULT_MODE={
+  FWD:{label:"FWD",voice:"Front wheel drive",weight:1,c1:"#1e5aa8"},
+  Touring:{label:"Touring",voice:"Touring",weight:1,c1:"#f08a1a"},
+  "1/12":{label:"1/12",voice:"One twelve",weight:1,c1:"#6a1b9a"},
+  Mod:{label:"Mod",voice:"Modified",weight:1,c1:"#c62828"},
+  GT:{label:"GT",voice:"Grand Touring",weight:1,c1:"#2e7d32"},
+  Kidz:{label:"Kidz",voice:"Kids",weight:1,c1:"#ffffff"}
+}
 
-      <div class="toast" id="profileToast"></div>
-    </div>
+const profile={
+  order:[...MODE_KEYS],
+  enabled:{FWD:true,Touring:true,"1/12":true,Mod:true,GT:true,Kidz:true},
+  modes:JSON.parse(JSON.stringify(DEFAULT_MODE))
+}
 
-    <!-- Modes + time -->
-    <div class="panel">
-      <div class="row">
-        <div class="small"><b>Modes</b> (order below)</div>
-        <div class="small">Time: <b id="intervalLabel">10 min</b></div>
-      </div>
+/* ---------------- HELPERS ---------------- */
+function labelFor(k){return profile.modes[k]?.label||k}
 
-      <div class="grid cols2" style="margin-top:10px;" id="modeChecks"></div>
+function updateModeChip(k){
+  const cb=el("cb_"+k)
+  if(!cb)return
+  const chip=cb.closest(".chip")
+  chip.querySelector(".dot").style.background=profile.modes[k].c1
+  chip.querySelector("b").textContent=labelFor(k)
+}
 
-      <div class="sliderRow">
-        <div class="small"><b>Custom</b></div>
-        <input type="range" id="customMin" min="2" max="60" step="1" value="10">
-        <div class="sliderVal" id="customLabel">10 min</div>
-      </div>
+function updateSummary(block,k){
+  block.querySelector("summary").textContent=labelFor(k)+" settings"
+}
 
-      <div class="btnrow controls" style="margin-top:10px;">
-        <button id="start" class="primary">Start</button>
-        <button id="stop" class="danger" disabled>Stop</button>
-      </div>
+/* ---------------- UI BUILD ---------------- */
+function buildModeChecks(){
+  const c=el("modeChecks");c.innerHTML=""
+  profile.order.forEach(k=>{
+    const d=document.createElement("div")
+    d.className="chip"
+    d.draggable=true
+    d.dataset.key=k
+    d.innerHTML=`
+      <label>
+        <input type="checkbox" id="cb_${k}" ${profile.enabled[k]?"checked":""}>
+        <span class="dot" style="background:${profile.modes[k].c1}"></span>
+        <span><b>${labelFor(k)}</b></span>
+      </label>`
+    c.appendChild(d)
 
-      <div class="btnrow misc" style="margin-top:10px;">
-        <button id="testVoice">Test Voice</button>
-      </div>
+    d.addEventListener("dragstart",e=>{
+      d.classList.add("dragging")
+      e.dataTransfer.setData("text/plain",k)
+    })
+    d.addEventListener("dragend",()=>d.classList.remove("dragging"))
+    d.addEventListener("dragover",e=>e.preventDefault())
+    d.addEventListener("drop",e=>{
+      e.preventDefault()
+      const from=e.dataTransfer.getData("text/plain")
+      if(from===k)return
+      const a=profile.order
+      a.splice(a.indexOf(from),1)
+      a.splice(a.indexOf(k),0,from)
+      buildModeChecks()
+      buildModeSettings()
+    })
+  })
+}
 
-      <div class="toast" id="toast"></div>
-      <div class="hint">Weight styr hur ofta ett mode dyker upp i rotationen.</div>
-    </div>
-
-    <!-- Warnings -->
-    <div class="panel">
-      <div class="row">
-        <div class="small"><b>Warnings</b></div>
-        <div class="small">Voice prompts</div>
-      </div>
-      <div class="grid cols2" style="margin-top:10px;">
-        <div class="chip"><label><input type="checkbox" id="w60" checked> 60s warning</label></div>
-        <div class="chip"><label><input type="checkbox" id="w30" checked> 30s warning</label></div>
-        <div class="chip"><label><input type="checkbox" id="w10" checked> 10s countdown</label></div>
-        <div class="chip"><label><input type="checkbox" id="softStart" checked> Soft start (3..2..1)</label></div>
-      </div>
-    </div>
-
-    <!-- Mode settings -->
-    <div class="panel" id="settingsPanel">
-      <div class="row">
-        <div class="small"><b>Mode settings</b></div>
-        <div class="small">Label + Voice + Colors + Weight</div>
-      </div>
-      <div class="grid" style="margin-top:10px; gap:10px;" id="modeSettings"></div>
-    </div>
-
-    <!-- Stage -->
-    <div class="stage" id="stage">
-      <img src="loggaml.png" class="stageLogo" alt="time/sloth logo">
-      <div class="badge" id="badge">IDLE</div>
-
-      <div class="mode" id="mode">Select modes</div>
-      <div class="time" id="time">--:--</div>
-      <div class="next" id="next">NEXT UP: --</div>
-      <div class="sub" id="sub">Start to begin rotation</div>
-
-      <div class="track" aria-hidden="true">
-        <div class="flag" title="Start">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path fill="currentColor" d="M6 2h2v20H6z"/>
-            <path fill="currentColor" d="M8 3h10l-2 3 2 3H8z"/>
-          </svg>
-        </div>
-
-        <div class="lane">
-          <div class="car" id="car" title="Car">
-            <div class="smoke" aria-hidden="true">
-              <div class="puff p1"></div>
-              <div class="puff p2"></div>
-              <div class="puff p3"></div>
-            </div>
-            <svg class="carSvg" viewBox="0 0 64 32" width="28" height="14" aria-hidden="true">
-              <path fill="currentColor"
-                d="M10 22h44c3 0 5-2 5-5v-5c0-2-1-3-3-3h-7l-6-6H21l-6 6H8c-2 0-3 1-3 3v5c0 3 2 5 5 5z"/>
-              <circle fill="currentColor" cx="20" cy="24" r="4"/>
-              <circle fill="currentColor" cx="46" cy="24" r="4"/>
-            </svg>
-          </div>
-        </div>
-
-        <div class="flag" title="Finish">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path fill="currentColor" d="M6 2h2v20H6z"/>
-            <path fill="currentColor" d="M8 4h12v10H8z"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const el = (id) => document.getElementById(id);
-
-    const splash = el("splash");
-    const enterBtn = el("enterBtn");
-
-    const stage = el("stage");
-    const badge = el("badge");
-    const statusEl = el("status");
-    const toastEl = el("toast");
-    const profileToastEl = el("profileToast");
-
-    const modeEl = el("mode");
-    const timeEl = el("time");
-    const nextEl = el("next");
-    const subEl = el("sub");
-    const carEl = el("car");
-
-    const modeChecks = el("modeChecks");
-    const modeSettings = el("modeSettings");
-
-    const intervalLabel = el("intervalLabel");
-    const customMin = el("customMin");
-    const customLabel = el("customLabel");
-
-    const startBtn = el("start");
-    const stopBtn  = el("stop");
-    const stopRunBtn = el("stopRun");
-    const skipRunBtn = el("skipRun");
-    const testVoiceBtn = el("testVoice");
-
-    const fsBtn = el("fsBtn");
-    const fsBtnRun = el("fsBtnRun");
-
-    const w60 = el("w60");
-    const w30 = el("w30");
-    const w10 = el("w10");
-    const softStart = el("softStart");
-
-    const profileSelect = el("profileSelect");
-    const newProfileBtn = el("newProfile");
-    const saveProfileBtn = el("saveProfile");
-    const renameProfileBtn = el("renameProfile");
-    const deleteProfileBtn = el("deleteProfile");
-    const exportBtn = el("exportBtn");
-    const importBtn = el("importBtn");
-    const resetBtn = el("resetBtn");
-
-    const MODE_KEYS = ["FWD","Touring","1/12","Mod","GT","Kidz"];
-    const LS_KEY = "ts_pro_profiles_v2";
-
-    const DEFAULT_MODE = {
-      FWD:     { label:"FWD",     voice:"Front wheel drive class",  weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
-      Touring: { label:"Touring", voice:"Touring stock class",      weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00" },
-      "1/12":  { label:"1/12",    voice:"One twelve class",         weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40" },
-      Mod:     { label:"Mod",     voice:"Modify class",             weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f" },
-      GT:      { label:"GT",      voice:"Grand touring class",      weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" },
-      Kidz:    { label:"Kidz",    voice:"Kids class",               weight:1, twoTone:false, split:"lr", c1:"#ffffff", c2:"#d9d9d9" }
-    };
-
-    const DEFAULT_PROFILE = () => ({
-      name: "Default",
-      durationMin: 10,
-      enabled: { FWD:true, Touring:true, "1/12":true, Mod:true, GT:true, Kidz:true },
-      warnings: { s60:true, s30:true, s10:true, softStart:true },
-      modes: JSON.parse(JSON.stringify(DEFAULT_MODE))
-    });
-
-    let store = loadStore();
-    let activeId = store.activeId;
-    let profile = store.profiles[activeId] || DEFAULT_PROFILE();
-
-    let intervalMin = clampInt(profile.durationMin, 2, 60);
-    let durationMs = intervalMin * 60 * 1000;
-
-    let running = false;
-    let rotation = [];
-    let idx = 0;
-
-    let slotStartedAt = 0;
-    let slotEndsAt = 0;
-    let tickTimer = null;
-
-    let warned60 = false;
-    let warned30 = false;
-    let warned10 = false;
-
-    let countdownTimer = null;
-    let inCountdown = false;
-
-    // Wake Lock
-    let wakeLock = null;
-    async function requestWakeLock(){
-      try{
-        if (!("wakeLock" in navigator)) return;
-        wakeLock = await navigator.wakeLock.request("screen");
-      } catch(e){}
+function buildModeSettings(){
+  const c=el("modeSettings");c.innerHTML=""
+  profile.order.forEach(k=>{
+    const m=profile.modes[k]
+    const d=document.createElement("details")
+    d.innerHTML=`
+      <summary>${labelFor(k)} settings</summary>
+      <div>
+        <label>Label on screen</label>
+        <input type="text" value="${m.label}">
+        <label>Voice</label>
+        <input type="text" value="${m.voice}">
+      </div>`
+    const inputs=d.querySelectorAll("input")
+    inputs[0].oninput=e=>{
+      m.label=e.target.value||k
+      updateModeChip(k)
+      updateSummary(d,k)
+      el("mode").textContent=labelFor(k)
     }
-    async function releaseWakeLock(){
-      try{ if (wakeLock){ await wakeLock.release(); wakeLock = null; } } catch(e){}
-    }
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible" && running) requestWakeLock();
-    });
-
-    function setToast(msg){ toastEl.textContent = msg || ""; }
-    function setProfileToast(msg){ profileToastEl.textContent = msg || ""; }
-
-    // TTS
-    function pickEnglishVoice(){
-      const voices = speechSynthesis.getVoices?.() || [];
-      return voices.find(v => /en-US/i.test(v.lang)) ||
-             voices.find(v => /en-GB/i.test(v.lang)) ||
-             voices.find(v => /^en/i.test(v.lang)) || null;
-    }
-    function speak(text){
-      try{
-        if (!("speechSynthesis" in window)) return;
-        speechSynthesis.getVoices?.();
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "en-US";
-        const v = pickEnglishVoice();
-        if (v) u.voice = v;
-        u.rate = 1.0;
-        u.pitch = 1.0;
-        u.volume = 1.0;
-        speechSynthesis.speak(u);
-      } catch(e){}
-    }
-    if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
-    }
-
-    function fmtMMSS(ms){
-      const total = Math.max(0, Math.ceil(ms / 1000));
-      const m = Math.floor(total / 60);
-      const s = total % 60;
-      return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
-    }
-    function clampInt(n, a, b){
-      n = Number(n);
-      if (!Number.isFinite(n)) n = a;
-      return Math.max(a, Math.min(b, Math.round(n)));
-    }
-    function cssKey(k){ return k.replace("/","_"); }
-
-    function loadStore(){
-      try{
-        const raw = localStorage.getItem(LS_KEY);
-        if (!raw){
-          const id = uid();
-          return { activeId: id, profiles: { [id]: DEFAULT_PROFILE() } };
-        }
-        const parsed = JSON.parse(raw);
-        if (!parsed || !parsed.profiles || !parsed.activeId) throw new Error("bad");
-        return parsed;
-      } catch {
-        const id = uid();
-        return { activeId: id, profiles: { [id]: DEFAULT_PROFILE() } };
-      }
-    }
-    function saveStore(){
-      try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e){}
-    }
-    function uid(){
-      return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
-    }
-    function saveActiveProfile(){
-      store.activeId = activeId;
-      store.profiles[activeId] = profile;
-      saveStore();
-    }
-
-    function hexToRgb(hex){
-      const h = (hex || "").replace("#","").trim();
-      if (h.length === 3){
-        const r = parseInt(h[0]+h[0], 16);
-        const g = parseInt(h[1]+h[1], 16);
-        const b = parseInt(h[2]+h[2], 16);
-        return {r,g,b};
-      }
-      if (h.length === 6){
-        const r = parseInt(h.slice(0,2), 16);
-        const g = parseInt(h.slice(2,4), 16);
-        const b = parseInt(h.slice(4,6), 16);
-        return {r,g,b};
-      }
-      return {r:0,g:0,b:0};
-    }
-    function relLuma({r,g,b}){
-      const sr = r/255, sg = g/255, sb = b/255;
-      const toLin = (c) => (c <= 0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4));
-      const R = toLin(sr), G = toLin(sg), B = toLin(sb);
-      return 0.2126*R + 0.7152*G + 0.0722*B;
-    }
-    function pickTextColor(c1, c2, twoTone){
-      const l1 = relLuma(hexToRgb(c1));
-      const l2 = relLuma(hexToRgb(c2));
-      const l = twoTone ? (l1 + l2)/2 : l1;
-      return l > 0.55 ? "#111111" : "#ffffff";
-    }
-
-    function applyStageTheme(modeKey){
-      const m = profile.modes[modeKey] || profile.modes.FWD;
-      const fg = pickTextColor(m.c1, m.c2, m.twoTone);
-
-      if (m.twoTone){
-        const dir = (m.split === "tb") ? "180deg" : "90deg";
-        stage.style.background = `linear-gradient(${dir}, ${m.c1} 0 50%, ${m.c2} 50% 100%)`;
-      } else {
-        stage.style.background = m.c1;
-      }
-
-      document.documentElement.style.setProperty("--stageFg", fg);
-
-      const isDarkText = (fg === "#111111");
-      document.documentElement.style.setProperty("--stageBadgeBg", isDarkText ? "rgba(0,0,0,.08)" : "rgba(0,0,0,.22)");
-      document.documentElement.style.setProperty("--stageBadgeBorder", isDarkText ? "rgba(0,0,0,.10)" : "rgba(0,0,0,.18)");
-      document.documentElement.style.setProperty("--laneBg", isDarkText ? "rgba(0,0,0,.10)" : "rgba(0,0,0,.18)");
-      document.documentElement.style.setProperty("--trackShadow", isDarkText ? "rgba(0,0,0,.12)" : "rgba(0,0,0,.25)");
-    }
-
-    function setBlink(on){
-      if (on){
-        modeEl.classList.add("blinkMode");
-        timeEl.classList.add("blinkTime");
-      } else {
-        modeEl.classList.remove("blinkMode");
-        timeEl.classList.remove("blinkTime");
-      }
-    }
-
-    function setCarProgress(now){
-      const elapsed = Math.max(0, Math.min(durationMs, now - slotStartedAt));
-      const pct = (elapsed / durationMs) * 100;
-      carEl.style.left = pct.toFixed(2) + "%";
-    }
-    function resetCar(){
-      carEl.style.left = "0%";
-      carEl.classList.remove("running");
-      carEl.classList.remove("bounce");
-    }
-    function startCarEffects(){
-      carEl.classList.add("running");
-      carEl.classList.remove("bounce");
-      void carEl.offsetWidth;
-      carEl.classList.add("bounce");
-      setTimeout(() => carEl.classList.remove("bounce"), 650);
-    }
-    function stopCarEffects(){
-      carEl.classList.remove("running");
-      carEl.classList.remove("bounce");
-    }
-
-    function voiceTextFor(key){
-      const v = (profile.modes[key]?.voice || profile.modes[key]?.label || key || "").trim();
-      return v.length ? v : key;
-    }
-    function labelFor(key){
-      return (profile.modes[key]?.label || key);
-    }
-
-    // Rotation with weight
-    function buildRotation(){
-      const list = [];
-      for (const k of MODE_KEYS){
-        if (!profile.enabled[k]) continue;
-        const w = clampInt(profile.modes[k]?.weight ?? 1, 1, 20);
-        for (let i=0; i<w; i++) list.push(k);
-      }
-      rotation = list;
-      return rotation;
-    }
-    function getNextKey(){
-      if (rotation.length === 0) return "--";
-      if (rotation.length === 1) return rotation[0];
-      return rotation[(idx + 1) % rotation.length];
-    }
-
-    function enterRunView(on){
-      document.body.classList.toggle("run", !!on);
-    }
-
-    function lockInputs(lock){
-      for (const k of MODE_KEYS){
-        const cb = el("cb_" + cssKey(k));
-        if (cb) cb.disabled = lock;
-        const blk = document.querySelector(`[data-mode="${cssKey(k)}"]`);
-        if (blk){
-          blk.querySelectorAll("input,select").forEach(x => x.disabled = lock);
-        }
-      }
-      customMin.disabled = lock;
-      testVoiceBtn.disabled = lock;
-
-      w60.disabled = lock;
-      w30.disabled = lock;
-      w10.disabled = lock;
-      softStart.disabled = lock;
-
-      profileSelect.disabled = lock;
-      newProfileBtn.disabled = lock;
-      saveProfileBtn.disabled = lock;
-      renameProfileBtn.disabled = lock;
-      deleteProfileBtn.disabled = lock;
-      exportBtn.disabled = lock;
-      importBtn.disabled = lock;
-      resetBtn.disabled = lock;
-    }
-
-    function setDurationMinutes(min){
-      intervalMin = clampInt(min, 2, 60);
-      profile.durationMin = intervalMin;
-      durationMs = intervalMin * 60 * 1000;
-
-      intervalLabel.textContent = `${intervalMin} min`;
-      customLabel.textContent = `${intervalMin} min`;
-      if (!running) timeEl.textContent = fmtMMSS(durationMs);
-
-      saveActiveProfile();
-      setToast(`Time set to ${intervalMin} minutes.`);
-    }
-
-    function clearCountdown(){
-      if (countdownTimer){
-        clearTimeout(countdownTimer);
-        countdownTimer = null;
-      }
-      inCountdown = false;
-    }
-
-    function beginHeatTimer(){
-      warned60 = warned30 = warned10 = false;
-      setBlink(false);
-
-      slotStartedAt = Date.now();
-      slotEndsAt = slotStartedAt + durationMs;
-
-      tick();
-      tickTimer = setInterval(tick, 80);
-    }
-
-    function doSoftStartThenRun(currentKey){
-      inCountdown = true;
-      badge.textContent = "GET READY";
-      subEl.textContent = "Soft start";
-      resetCar();
-      startCarEffects();
-
-      speak(`${voiceTextFor(currentKey)}`);
-
-      const steps = [3,2,1];
-      let i = 0;
-
-      const step = () => {
-        if (!running) return;
-        const n = steps[i];
-        timeEl.textContent = "00:0" + n;
-        speak(String(n));
-        i++;
-        if (i < steps.length){
-          countdownTimer = setTimeout(step, 900);
-        } else {
-          countdownTimer = setTimeout(() => {
-            if (!running) return;
-            speak("Go");
-            clearCountdown();
-            beginHeatTimer();
-          }, 900);
-        }
-      };
-
-      timeEl.textContent = "00:03";
-      countdownTimer = setTimeout(step, 450);
-    }
-
-    function startSlot(){
-      const currentKey = rotation[idx];
-      const nextKey = getNextKey();
-
-      applyStageTheme(currentKey);
-
-      badge.textContent = "RUNNING";
-      statusEl.textContent = `Running: ${labelFor(currentKey)}`;
-
-      modeEl.textContent = labelFor(currentKey);
-      nextEl.textContent = `NEXT UP: ${labelFor(nextKey)}`;
-      subEl.textContent = `${intervalMin} min slot`;
-
-      resetCar();
-      startCarEffects();
-
-      if (profile.warnings.softStart){
-        doSoftStartThenRun(currentKey);
-      } else {
-        speak(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
-        beginHeatTimer();
-      }
-    }
-
-    function tick(){
-      if (inCountdown) return;
-
-      const now = Date.now();
-      const remaining = slotEndsAt - now;
-
-      timeEl.textContent = fmtMMSS(remaining);
-      setCarProgress(now);
-
-      if (remaining > 0){
-        if (profile.warnings.s60 && !warned60 && remaining <= 60*1000){
-          warned60 = true;
-          const nextKey = getNextKey();
-          speak(`One minute left. ${voiceTextFor(nextKey)}, get ready`);
-          setBlink(true);
-        }
-        if (profile.warnings.s30 && !warned30 && remaining <= 30*1000){
-          warned30 = true;
-          speak("Thirty seconds");
-        }
-        if (profile.warnings.s10 && !warned10 && remaining <= 10*1000){
-          warned10 = true;
-          speak("Ten seconds");
-        }
-      }
-
-      if (remaining <= 0) endSlot();
-    }
-
-    function endSlot(){
-      if (tickTimer){
-        clearInterval(tickTimer);
-        tickTimer = null;
-      }
-      clearCountdown();
-
-      carEl.style.left = "100%";
-      stopCarEffects();
-
-      const currentKey = rotation[idx];
-      speak(`${voiceTextFor(currentKey)} training end`);
-
-      idx = (idx + 1) % rotation.length;
-      startSlot();
-    }
-
-    function start(){
-      const rot = buildRotation();
-      if (rot.length === 0){
-        setToast("Select at least one mode.");
-        return;
-      }
-
-      running = true;
-      requestWakeLock();
-      enterRunView(true);
-
-      idx = 0;
-
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-      lockInputs(true);
-
-      setToast("Started.");
-      startSlot();
-    }
-
-    function stop(){
-      running = false;
-      releaseWakeLock();
-      enterRunView(false);
-
-      if (tickTimer){
-        clearInterval(tickTimer);
-        tickTimer = null;
-      }
-      clearCountdown();
-
-      try{ if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e){}
-
-      badge.textContent = "STOPPED";
-      statusEl.textContent = "Stopped";
-      setBlink(false);
-
-      stopCarEffects();
-      resetCar();
-
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      lockInputs(false);
-
-      setToast("Stopped.");
-      refreshIdleView();
-    }
-
-    function skip(){
-      if (!running || rotation.length === 0) return;
-
-      if (tickTimer){
-        clearInterval(tickTimer);
-        tickTimer = null;
-      }
-      clearCountdown();
-
-      carEl.style.left = "100%";
-      stopCarEffects();
-
-      const currentKey = rotation[idx];
-      speak(`${voiceTextFor(currentKey)} training end`);
-
-      idx = (idx + 1) % rotation.length;
-      startSlot();
-    }
-
-    // Profiles UI
-    function rebuildProfileSelect(){
-      profileSelect.innerHTML = "";
-      const entries = Object.entries(store.profiles);
-      entries.sort((a,b) => String(a[1]?.name||"").localeCompare(String(b[1]?.name||"")));
-      for (const [id, p] of entries){
-        const opt = document.createElement("option");
-        opt.value = id;
-        opt.textContent = p?.name || "Unnamed";
-        profileSelect.appendChild(opt);
-      }
-      profileSelect.value = activeId;
-    }
-
-    function switchToProfile(id){
-      const p = store.profiles[id];
-      if (!p) return;
-      activeId = id;
-      profile = p;
-
-      intervalMin = clampInt(profile.durationMin, 2, 60);
-      durationMs = intervalMin * 60 * 1000;
-
-      w60.checked = !!profile.warnings.s60;
-      w30.checked = !!profile.warnings.s30;
-      w10.checked = !!profile.warnings.s10;
-      softStart.checked = !!profile.warnings.softStart;
-
-      customMin.value = String(intervalMin);
-      intervalLabel.textContent = `${intervalMin} min`;
-      customLabel.textContent = `${intervalMin} min`;
-
-      buildModeChecks();
-      buildModeSettings();
-      refreshIdleView();
-      saveActiveProfile();
-    }
-
-    function promptName(msg, fallback){
-      const name = prompt(msg, fallback || "");
-      if (name === null) return null;
-      const n = String(name).trim().slice(0, 24);
-      return n.length ? n : null;
-    }
-
-    function exportConfig(){
-      const payload = { v: 2, profile };
-      const txt = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      prompt("Copy this config string:", txt);
-    }
-
-    function sanitizeProfile(p){
-      const base = DEFAULT_PROFILE();
-      base.name = String(p.name || base.name).slice(0,24);
-      base.durationMin = clampInt(p.durationMin, 2, 60);
-
-      base.enabled = { ...base.enabled, ...(p.enabled || {}) };
-      base.warnings = { ...base.warnings, ...(p.warnings || {}) };
-
-      for (const k of MODE_KEYS){
-        base.modes[k] = { ...base.modes[k], ...((p.modes||{})[k] || {}) };
-        base.modes[k].label = String(base.modes[k].label || k).slice(0,20);
-        base.modes[k].voice = String(base.modes[k].voice || k).slice(0,60);
-        base.modes[k].weight = clampInt(base.modes[k].weight, 1, 20);
-        base.modes[k].twoTone = !!base.modes[k].twoTone;
-        base.modes[k].split = (base.modes[k].split === "tb") ? "tb" : "lr";
-        base.modes[k].c1 = String(base.modes[k].c1 || "#000000");
-        base.modes[k].c2 = String(base.modes[k].c2 || "#000000");
-      }
-      return base;
-    }
-
-    function importConfig(){
-      const txt = prompt("Paste config string here:");
-      if (!txt) return;
-      try{
-        const raw = decodeURIComponent(escape(atob(txt)));
-        const parsed = JSON.parse(raw);
-        if (!parsed || parsed.v !== 2 || !parsed.profile) throw new Error("bad");
-        const id = uid();
-        const p = sanitizeProfile(parsed.profile);
-        store.profiles[id] = p;
-        saveStore();
-        rebuildProfileSelect();
-        switchToProfile(id);
-        setProfileToast("Imported.");
-      } catch {
-        setProfileToast("Import failed.");
-      }
-      setTimeout(() => setProfileToast(""), 1200);
-    }
-
-    // Mode checks + settings
-    function escapeHtml(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function escapeAttr(s){ return escapeHtml(s); }
-
-    function buildModeChecks(){
-      modeChecks.innerHTML = "";
-      for (const k of MODE_KEYS){
-        const id = "cb_" + cssKey(k);
-        const dotColor = profile.modes[k].c1 || "#999999";
-        const checked = profile.enabled[k] ? "checked" : "";
-
-        const wrap = document.createElement("div");
-        wrap.className = "chip";
-        wrap.innerHTML = `
-          <label>
-            <input type="checkbox" id="${id}" ${checked}>
-            <span class="dot" style="background:${dotColor}"></span>
-            <span><b>${escapeHtml(profile.modes[k].label || k)}</b></span>
-          </label>
-        `;
-        modeChecks.appendChild(wrap);
-
-        el(id).onchange = () => {
-          profile.enabled[k] = el(id).checked;
-          saveActiveProfile();
-          if (!running) refreshIdleView();
-        };
-      }
-    }
-
-    function buildModeSettings(){
-      modeSettings.innerHTML = "";
-      for (const k of MODE_KEYS){
-        const m = profile.modes[k];
-        const block = document.createElement("details");
-        block.dataset.mode = cssKey(k);
-
-        block.innerHTML = `
-          <summary>${escapeHtml(m.label || k)} settings</summary>
-          <div class="modeForm">
-            <div class="field">
-              <label>Label on screen</label>
-              <input type="text" value="${escapeAttr(m.label || "")}" data-field="label">
-            </div>
-
-            <div class="field">
-              <label>Voice text</label>
-              <input type="text" value="${escapeAttr(m.voice || "")}" data-field="voice">
-            </div>
-
-            <div class="field">
-              <label>Weight (how often in rotation)</label>
-              <input type="number" min="1" max="20" step="1" value="${escapeAttr(m.weight ?? 1)}" data-field="weight">
-            </div>
-
-            <div class="inline2">
-              <div class="field">
-                <label>Color 1</label>
-                <input type="color" value="${escapeAttr(m.c1 || "#000000")}" data-field="c1">
-              </div>
-              <div class="field">
-                <label>Color 2</label>
-                <input type="color" value="${escapeAttr(m.c2 || "#000000")}" data-field="c2">
-              </div>
-            </div>
-
-            <div class="toggleRow">
-              <span>Use 2 colors</span>
-              <input type="checkbox" ${m.twoTone ? "checked" : ""} data-field="twoTone">
-            </div>
-
-            <div class="field">
-              <label>Split direction</label>
-              <select class="select" data-field="split">
-                <option value="lr" ${m.split==="lr" ? "selected":""}>Left / Right</option>
-                <option value="tb" ${m.split==="tb" ? "selected":""}>Top / Bottom</option>
-              </select>
-            </div>
-          </div>
-        `;
-
-        modeSettings.appendChild(block);
-
-        const inputs = block.querySelectorAll("input, select");
-        inputs.forEach(inp => {
-          inp.addEventListener("input", () => {
-            const field = inp.dataset.field;
-            if (!field) return;
-
-            if (field === "twoTone"){
-              m.twoTone = !!inp.checked;
-            } else if (field === "split"){
-              m.split = String(inp.value || "lr");
-            } else if (field === "label"){
-              m.label = String(inp.value || "").trim().slice(0, 20) || k;
-            } else if (field === "voice"){
-              m.voice = String(inp.value || "").trim().slice(0, 60) || m.label || k;
-            } else if (field === "weight"){
-              m.weight = clampInt(inp.value, 1, 20);
-              inp.value = String(m.weight);
-            } else if (field === "c1"){
-              m.c1 = String(inp.value || "#000000");
-            } else if (field === "c2"){
-              m.c2 = String(inp.value || "#000000");
-            }
-
-            saveActiveProfile();
-            buildModeChecks();      // uppdaterar checklista + färgprick
-            buildModeSettings();    // uppdaterar summary-texter
-            if (!running) refreshIdleView();
-          });
-        });
-      }
-    }
-
-    function refreshIdleView(){
-      const rot = buildRotation();
-      if (rot.length === 0){
-        badge.textContent = "IDLE";
-        modeEl.textContent = "Select modes";
-        timeEl.textContent = "--:--";
-        nextEl.textContent = "NEXT UP: --";
-        subEl.textContent = "Pick at least one mode.";
-        setBlink(false);
-        resetCar();
-        stage.style.background = "rgba(0,0,0,.15)";
-        document.documentElement.style.setProperty("--stageFg", "#ffffff");
-        startBtn.disabled = true;
-        return;
-      }
-
-      startBtn.disabled = false;
-
-      const firstKey = rot[0];
-      const nextKey = (rot.length === 1) ? firstKey : rot[1];
-
-      badge.textContent = "IDLE";
-      modeEl.textContent = labelFor(firstKey);
-      timeEl.textContent = fmtMMSS(durationMs);
-      nextEl.textContent = `NEXT UP: ${labelFor(nextKey)}`;
-      subEl.textContent = `${intervalMin} min slot`;
-
-      applyStageTheme(firstKey);
-      setBlink(false);
-      resetCar();
-    }
-
-    // Fullscreen
-    async function toggleFullscreen(){
-      try{
-        if (!document.fullscreenElement){
-          await document.documentElement.requestFullscreen?.();
-        } else {
-          await document.exitFullscreen?.();
-        }
-      } catch(e){}
-    }
-
-    // Events
-    customMin.oninput = () => setDurationMinutes(customMin.value);
-
-    w60.onchange = () => { profile.warnings.s60 = !!w60.checked; saveActiveProfile(); };
-    w30.onchange = () => { profile.warnings.s30 = !!w30.checked; saveActiveProfile(); };
-    w10.onchange = () => { profile.warnings.s10 = !!w10.checked; saveActiveProfile(); };
-    softStart.onchange = () => { profile.warnings.softStart = !!softStart.checked; saveActiveProfile(); };
-
-    startBtn.onclick = start;
-    stopBtn.onclick = stop;
-    stopRunBtn.onclick = stop;
-    skipRunBtn.onclick = skip;
-
-    testVoiceBtn.onclick = () => {
-      speak("Test voice. time slash sloth pro.");
-      setToast("If you heard that, voice is working.");
-    };
-
-    fsBtn.onclick = toggleFullscreen;
-    fsBtnRun.onclick = toggleFullscreen;
-
-    profileSelect.onchange = () => {
-      if (running) return;
-      switchToProfile(profileSelect.value);
-    };
-
-    newProfileBtn.onclick = () => {
-      if (running) return;
-      const name = promptName("Profile name:", "New profile");
-      if (!name) return;
-      const id = uid();
-      const p = sanitizeProfile(profile);
-      p.name = name;
-      store.profiles[id] = p;
-      saveStore();
-      rebuildProfileSelect();
-      switchToProfile(id);
-      setProfileToast("Created.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    saveProfileBtn.onclick = () => {
-      if (running) return;
-      saveActiveProfile();
-      setProfileToast("Saved.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    renameProfileBtn.onclick = () => {
-      if (running) return;
-      const name = promptName("New profile name:", profile.name || "Profile");
-      if (!name) return;
-      profile.name = name;
-      saveActiveProfile();
-      saveStore();
-      rebuildProfileSelect();
-      setProfileToast("Renamed.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    deleteProfileBtn.onclick = () => {
-      if (running) return;
-      if (Object.keys(store.profiles).length <= 1){
-        setProfileToast("Can't delete last profile.");
-        setTimeout(() => setProfileToast(""), 1200);
-        return;
-      }
-      if (!confirm(`Delete profile "${profile.name}"?`)) return;
-
-      delete store.profiles[activeId];
-      const nextId = Object.keys(store.profiles)[0];
-      store.activeId = nextId;
-      saveStore();
-      rebuildProfileSelect();
-      switchToProfile(nextId);
-
-      setProfileToast("Deleted.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    exportBtn.onclick = () => { if (!running) exportConfig(); };
-    importBtn.onclick = () => { if (!running) importConfig(); };
-
-    resetBtn.onclick = () => {
-      if (running) return;
-      if (!confirm("Reset current profile to defaults?")) return;
-      const keepName = profile.name || "Default";
-      profile = DEFAULT_PROFILE();
-      profile.name = keepName;
-      store.profiles[activeId] = profile;
-      saveStore();
-      switchToProfile(activeId);
-      setProfileToast("Reset.");
-      setTimeout(() => setProfileToast(""), 1000);
-    };
-
-    function hideSplash(){
-      splash.classList.add("hide");
-      setTimeout(() => { splash.style.display = "none"; }, 450);
-    }
-    enterBtn.onclick = () => {
-      speak("Voice enabled");
-      setTimeout(() => { try { speechSynthesis.getVoices?.(); } catch(e){} }, 200);
-      hideSplash();
-    };
-
-    // Init
-    rebuildProfileSelect();
-
-    w60.checked = !!profile.warnings.s60;
-    w30.checked = !!profile.warnings.s30;
-    w10.checked = !!profile.warnings.s10;
-    softStart.checked = !!profile.warnings.softStart;
-
-    customMin.value = String(intervalMin);
-    intervalLabel.textContent = `${intervalMin} min`;
-    customLabel.textContent = `${intervalMin} min`;
-
-    buildModeChecks();
-    buildModeSettings();
-    refreshIdleView();
-  </script>
+    inputs[1].oninput=e=>m.voice=e.target.value||m.label
+    c.appendChild(d)
+  })
+}
+
+/* ---------------- INIT ---------------- */
+buildModeChecks()
+buildModeSettings()
+</script>
 </body>
 </html>

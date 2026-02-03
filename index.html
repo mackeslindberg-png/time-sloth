@@ -22,7 +22,6 @@ body{
 }
 
 /* ---------- LAYOUT ---------- */
-
 .wrap{
   height:100%;
   padding:14px;
@@ -37,21 +36,9 @@ body{
   padding:12px;
 }
 
-body.run .panel{
-  display:none;
-}
+body.run .panel{ display:none; }
 
-h2{
-  margin:0 0 8px 0;
-  font-size:16px;
-}
-
-.row{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:space-between;
-}
+h2{ margin:0 0 8px 0; font-size:16px; }
 
 label{
   display:flex;
@@ -61,9 +48,7 @@ label{
 }
 
 input[type="checkbox"],
-input[type="radio"]{
-  transform:scale(1.3);
-}
+input[type="radio"]{ transform:scale(1.3); }
 
 button{
   font:inherit;
@@ -75,17 +60,11 @@ button{
   font-weight:800;
 }
 
-button.primary{
-  background:#fff;
-  color:#000;
-}
-
-button:disabled{
-  opacity:.4;
-}
+button.primary{ background:#fff; color:#000; }
+button.danger{ background:rgba(255,80,80,.25); color:#fff; }
+button:disabled{ opacity:.4; }
 
 /* ---------- STAGE ---------- */
-
 .stage{
   flex:1;
   border-radius:20px;
@@ -97,97 +76,92 @@ button:disabled{
   gap:12px;
   text-align:center;
   transition:background 300ms ease;
+  position:relative;
 }
 
-.badge{
-  font-size:12px;
-  opacity:.75;
-}
+.badge{ font-size:12px; opacity:.75; }
+.group{ font-size:42px; font-weight:900; }
+.time{ font-size:64px; font-weight:900; }
+.next{ font-size:18px; opacity:.85; }
 
-.group{
-  font-size:42px;
-  font-weight:900;
-}
+/* ---------- GROUP COLORS ---------- */
+.stage.g1{ background:#1e5aa8; }
+.stage.g2{ background:#f08a1a; }
+.stage.g3{ background:#2e7d32; }
 
-.time{
-  font-size:64px;
-  font-weight:900;
-}
-
-.next{
-  font-size:18px;
-  opacity:.85;
-}
-
-/* ---------- RUN BAR ---------- */
-
-.runbar{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:10px;
-}
-
-body.run .runbar{
+/* ---------- RUN CONTROLS (only visible in run mode) ---------- */
+.runControls{
   position:fixed;
   left:14px;
   right:14px;
   bottom:14px;
+  display:none;
+  gap:10px;
+  z-index:50;
+}
+body.run .runControls{
+  display:grid;
+  grid-template-columns:1fr 1fr;
 }
 
-/* ---------- GROUP COLORS ---------- */
-
-.stage.g1{ background:#1e5aa8; }
-.stage.g2{ background:#f08a1a; }
-.stage.g3{ background:#2e7d32; }
+/* ---------- SPLASH: click logo to enable voice ---------- */
+.splash{
+  position:fixed;
+  inset:0;
+  background:#0f0f0f;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  z-index:999;
+  padding:18px;
+  text-align:center;
+  transition:opacity 320ms ease;
+}
+.splash.hide{ opacity:0; pointer-events:none; }
+.splashLogo{
+  width:min(260px,70vw);
+  height:auto;
+  display:block;
+  opacity:.95;
+  cursor:pointer;
+}
+.splashText{ font-weight:900; letter-spacing:.4px; font-size:22px; opacity:.95; }
+.splashSub{ font-size:13px; opacity:.78; max-width:46ch; line-height:1.35; font-weight:700; }
 
 </style>
 </head>
 
 <body>
+
+<!-- SPLASH -->
+<div class="splash" id="splash">
+  <img src="loggaml.png" class="splashLogo" id="logoBtn" alt="time/sloth logo">
+  <div class="splashText">time/sloth</div>
+  <div class="splashSub">Tryck på loggan för att starta appen och aktivera röst (viktigt på Android).</div>
+</div>
+
 <div class="wrap">
 
   <!-- GROUP SELECTION -->
   <div class="panel">
     <h2>Groups</h2>
-
-    <label>
-      <input type="checkbox" id="g1" checked>
-      Group 1
-    </label>
-
-    <label>
-      <input type="checkbox" id="g2" checked>
-      Group 2
-    </label>
-
-    <label>
-      <input type="checkbox" id="g3">
-      Group 3
-    </label>
+    <label><input type="checkbox" id="g1" checked> Group 1</label>
+    <label><input type="checkbox" id="g2" checked> Group 2</label>
+    <label><input type="checkbox" id="g3"> Group 3</label>
   </div>
 
   <!-- TIME -->
   <div class="panel">
     <h2>Time per group</h2>
-
-    <label>
-      <input type="radio" name="time" value="2" checked>
-      2 minutes
-    </label>
-
-    <label>
-      <input type="radio" name="time" value="10">
-      10 minutes
-    </label>
+    <label><input type="radio" name="time" value="2" checked> 2 minutes</label>
+    <label><input type="radio" name="time" value="10"> 10 minutes</label>
   </div>
 
-  <!-- CONTROLS -->
+  <!-- EDIT CONTROLS (hidden when running) -->
   <div class="panel">
-    <div class="runbar">
-      <button id="start" class="primary">Start</button>
-      <button id="skip">Skip</button>
-      <button id="stop" disabled>Stop</button>
-    </div>
+    <button id="start" class="primary" style="width:100%;">Start</button>
   </div>
 
   <!-- STAGE -->
@@ -200,8 +174,15 @@ body.run .runbar{
 
 </div>
 
+<!-- RUN CONTROLS -->
+<div class="runControls">
+  <button id="skip">Skip</button>
+  <button id="stop" class="danger">Stop</button>
+</div>
+
 <script>
 const el = id => document.getElementById(id)
+const stage = el("stage")
 
 let running = false
 let order = []
@@ -209,12 +190,11 @@ let idx = 0
 let timer = null
 let endAt = 0
 
-const stage = el("stage")
+let warned60 = false
+let warned10 = false
 
 function getDuration(){
-  return Number(
-    document.querySelector('input[name="time"]:checked').value
-  ) * 60 * 1000
+  return Number(document.querySelector('input[name="time"]:checked').value) * 60 * 1000
 }
 
 function getActiveGroups(){
@@ -233,11 +213,18 @@ function fmt(ms){
 
 function speak(t){
   try{
+    if(!("speechSynthesis" in window)) return
     speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(t)
     u.lang="en-US"
     speechSynthesis.speak(u)
   }catch{}
+}
+
+function hideSplash(){
+  const splash = el("splash")
+  splash.classList.add("hide")
+  setTimeout(() => splash.style.display = "none", 350)
 }
 
 function start(){
@@ -248,9 +235,6 @@ function start(){
   idx = 0
   document.body.classList.add("run")
 
-  el("start").disabled = true
-  el("stop").disabled = false
-
   runSlot()
 }
 
@@ -258,13 +242,17 @@ function runSlot(){
   const current = order[idx]
   const next = order[(idx+1) % order.length]
 
+  warned60 = false
+  warned10 = false
+
   stage.className = "stage " + current.id
 
-  el("badge").textContent = "RUNNING"
+  el("badge").textContent = "GET READY"
   el("group").textContent = current.name
   el("next").textContent = "NEXT: " + next.name
 
-  speak(current.name)
+  speak("Get ready")
+  setTimeout(() => speak(current.name), 600)
 
   endAt = Date.now() + getDuration()
   tick()
@@ -274,6 +262,16 @@ function runSlot(){
 function tick(){
   const left = endAt - Date.now()
   el("time").textContent = fmt(left)
+
+  if(!warned60 && left <= 60000 && left > 59000){
+    warned60 = true
+    speak("One minute remaining")
+  }
+
+  if(!warned10 && left <= 10000 && left > 9000){
+    warned10 = true
+    speak("Ten seconds remaining")
+  }
 
   if(left <= 0){
     clearInterval(timer)
@@ -287,14 +285,10 @@ function stop(){
   clearInterval(timer)
 
   document.body.classList.remove("run")
-
   stage.className = "stage"
 
   el("badge").textContent = "STOPPED"
   el("group").textContent = "Stopped"
-
-  el("start").disabled = false
-  el("stop").disabled = true
 }
 
 function skip(){
@@ -304,10 +298,23 @@ function skip(){
   runSlot()
 }
 
+/* Splash: click logo to start app + unlock voice */
+el("logoBtn").onclick = () => {
+  speak("Voice enabled")
+  hideSplash()
+}
+
+/* Edit start */
 el("start").onclick = start
+
+/* Run controls */
 el("stop").onclick = stop
 el("skip").onclick = skip
+
+/* Init UI */
+el("time").textContent = fmt(getDuration())
 </script>
 </body>
 </html>
+
 

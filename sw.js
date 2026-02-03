@@ -1,28 +1,35 @@
-const CACHE = "timesloth-v1";
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./logo.png"
-];
+/* time/sloth – Service Worker
+   Safe update strategy (no stale cache)
+*/
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+const CACHE_NAME = "time-sloth-v3"; // bumpa till v4, v5 vid större uppdateringar
+
+self.addEventListener("install", event => {
+  // Tvinga ny service worker att aktiveras direkt
   self.skipWaiting();
 });
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => (k === CACHE ? null : caches.delete(k))))
+self.addEventListener("activate", event => {
+  // Rensa ALLA gamla cachar
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      )
     )
   );
+
+  // Ta kontroll över alla öppna sidor direkt
   self.clients.claim();
 });
 
-self.addEventListener("fetch", (e) => {
-  e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
-      .catch(() => caches.match("./index.html"))
+self.addEventListener("fetch", event => {
+  // Network-first: alltid försök hämta nytt
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
   );
 });
-

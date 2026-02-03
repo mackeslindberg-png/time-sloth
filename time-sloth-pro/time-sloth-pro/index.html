@@ -7,7 +7,7 @@
 
   <style>
     :root{
-      --scale: 1.10;
+      --scale: 1.15;
       --bg: #1b1b1b;
       --fg: #ffffff;
       --card: rgba(0,0,0,.18);
@@ -132,6 +132,19 @@
     button.danger{ background: rgba(255,60,60,.22); border-color: rgba(255,60,60,.35); }
     button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
 
+    .select{
+      width:100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.18);
+      color: var(--fg);
+      padding: 12px;
+      font-size: calc(14px * var(--scale));
+      outline:none;
+      font-weight: 900;
+    }
+
+    /* Stage */
     .stage{
       flex: 1 1 auto;
       display:flex;
@@ -214,6 +227,7 @@
     .blinkTime{ animation: blink 0.85s step-end infinite; }
     @keyframes blink{ 50%{ opacity: .15; } }
 
+    /* Splash */
     .splash{
       position:fixed;
       inset:0;
@@ -235,7 +249,7 @@
     .splashSub{ font-size: calc(13px * var(--scale)); opacity: .78; max-width: 46ch; line-height: 1.35; font-weight:800; }
     .splashBtn{ margin-top: 8px; width: min(360px, 92vw); }
 
-    /* RUN VIEW fullscreen */
+    /* Run view */
     body.run .panel{ display:none; }
     body.run .wrap{ gap: 0; }
     body.run .topbar{ display:none; }
@@ -318,18 +332,10 @@
     }
     details summary::-webkit-details-marker{ display:none; }
 
-    .modeForm{
-      margin-top: 10px;
-      display:grid;
-      gap: 10px;
-    }
+    .modeForm{ margin-top: 10px; display:grid; gap: 10px; }
     .field{ display:grid; gap: 6px; }
-    .field label{
-      font-weight: 900;
-      opacity: .92;
-      font-size: calc(12px * var(--scale));
-    }
-    .field input[type="text"]{
+    .field label{ font-weight: 900; opacity: .92; font-size: calc(12px * var(--scale)); }
+    .field input[type="text"], .field input[type="number"]{
       width:100%;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,.18);
@@ -338,6 +344,7 @@
       padding: 12px;
       font-size: calc(14px * var(--scale));
       outline: none;
+      font-weight: 900;
     }
     .inline2{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .toggleRow{
@@ -353,28 +360,6 @@
       font-size: calc(13px * var(--scale));
     }
     .toggleRow input{ transform: scale(1.25); }
-    .select{
-      width:100%;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.18);
-      color: var(--fg);
-      padding: 12px;
-      font-size: calc(14px * var(--scale));
-      outline:none;
-      font-weight: 900;
-    }
-    .num{
-      width:100%;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.18);
-      color: var(--fg);
-      padding: 12px;
-      font-size: calc(14px * var(--scale));
-      outline:none;
-      font-weight: 900;
-    }
 
     /* Track with flags + car */
     .track{
@@ -390,12 +375,10 @@
       pointer-events:none;
       opacity: .98;
     }
-
     .flag svg{
       color: var(--stageFg);
       filter: drop-shadow(0 1px 0 var(--trackShadow));
     }
-
     .lane{
       position: relative;
       flex: 1 1 auto;
@@ -404,7 +387,6 @@
       background: var(--laneBg);
       overflow: visible;
     }
-
     .car{
       position:absolute;
       top: 50%;
@@ -413,18 +395,11 @@
       color: var(--stageFg);
       z-index: 2;
       will-change: left, transform, filter;
-      filter:
-        drop-shadow(0 2px 0 var(--trackShadow))
-        drop-shadow(0 0 10px rgba(255,255,255,.18));
+      filter: drop-shadow(0 2px 0 var(--trackShadow)) drop-shadow(0 0 10px rgba(255,255,255,.18));
     }
-
     .car.running{
-      filter:
-        drop-shadow(0 2px 0 var(--trackShadow))
-        drop-shadow(0 0 12px rgba(255,255,255,.25))
-        drop-shadow(0 0 22px rgba(255,255,255,.18));
+      filter: drop-shadow(0 2px 0 var(--trackShadow)) drop-shadow(0 0 12px rgba(255,255,255,.25)) drop-shadow(0 0 22px rgba(255,255,255,.18));
     }
-
     .car.running .carSvg{
       transform-origin: 50% 70%;
       animation: wobble 260ms ease-in-out infinite;
@@ -434,7 +409,6 @@
       50%  { transform: rotate(3deg)  translateY(-1px); }
       100% { transform: rotate(-3deg) translateY(0px); }
     }
-
     .car.bounce{
       animation: bounce 520ms cubic-bezier(.2,.8,.2,1) 1;
     }
@@ -445,7 +419,6 @@
       75%  { transform: translate(-50%,-58%) scale(1.02); }
       100% { transform: translate(-50%,-50%) scale(1); }
     }
-
     .smoke{
       position:absolute;
       left:-6px;
@@ -459,7 +432,6 @@
       opacity: 0;
     }
     .car.running .smoke{ opacity: 1; }
-
     .puff{
       position:absolute;
       right: 0;
@@ -474,7 +446,6 @@
     }
     .puff.p2{ animation-delay: 140ms; width: 8px; height: 8px; background: rgba(255,255,255,.45); }
     .puff.p3{ animation-delay: 280ms; width: 12px; height: 12px; background: rgba(255,255,255,.35); }
-
     @keyframes puff{
       0%{ transform: translate(0,-50%) scale(.7); opacity: 0; }
       15%{ opacity: .75; }
@@ -512,6 +483,7 @@
       </div>
     </div>
 
+    <!-- Profiles -->
     <div class="panel">
       <div class="row">
         <div class="small"><b>Profile</b></div>
@@ -535,9 +507,10 @@
       <div class="toast" id="profileToast"></div>
     </div>
 
+    <!-- Modes + time -->
     <div class="panel">
       <div class="row">
-        <div class="small"><b>Modes</b> (rotation in shown order)</div>
+        <div class="small"><b>Modes</b> (order below)</div>
         <div class="small">Time: <b id="intervalLabel">10 min</b></div>
       </div>
 
@@ -559,9 +532,10 @@
       </div>
 
       <div class="toast" id="toast"></div>
-      <div class="hint">Tips: Long heats? Use 30s + 10s warnings. Fullscreen works best in Chrome on Android.</div>
+      <div class="hint">Weight styr hur ofta ett mode dyker upp i rotationen.</div>
     </div>
 
+    <!-- Warnings -->
     <div class="panel">
       <div class="row">
         <div class="small"><b>Warnings</b></div>
@@ -575,14 +549,16 @@
       </div>
     </div>
 
+    <!-- Mode settings -->
     <div class="panel" id="settingsPanel">
       <div class="row">
         <div class="small"><b>Mode settings</b></div>
-        <div class="small">Voice + Colors + Weight</div>
+        <div class="small">Label + Voice + Colors + Weight</div>
       </div>
       <div class="grid" style="margin-top:10px; gap:10px;" id="modeSettings"></div>
     </div>
 
+    <!-- Stage -->
     <div class="stage" id="stage">
       <img src="loggaml.png" class="stageLogo" alt="time/sloth logo">
       <div class="badge" id="badge">IDLE</div>
@@ -675,7 +651,7 @@
     const resetBtn = el("resetBtn");
 
     const MODE_KEYS = ["FWD","Touring","1/12","Mod","GT","Kidz"];
-    const LS_KEY = "ts_pro_profiles_v1";
+    const LS_KEY = "ts_pro_profiles_v2";
 
     const DEFAULT_MODE = {
       FWD:     { label:"FWD",     voice:"Front wheel drive class",  weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
@@ -691,36 +667,8 @@
       durationMin: 10,
       enabled: { FWD:true, Touring:true, "1/12":true, Mod:true, GT:true, Kidz:true },
       warnings: { s60:true, s30:true, s10:true, softStart:true },
-      modes: structuredClone(DEFAULT_MODE)
+      modes: JSON.parse(JSON.stringify(DEFAULT_MODE))
     });
-
-    function structuredClone(obj){ return JSON.parse(JSON.stringify(obj)); }
-    function setToast(msg){ toastEl.textContent = msg || ""; }
-    function setProfileToast(msg){ profileToastEl.textContent = msg || ""; }
-
-    function uid(){
-      return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
-    }
-
-    function loadStore(){
-      try{
-        const raw = localStorage.getItem(LS_KEY);
-        if (!raw){
-          const id = uid();
-          return { activeId: id, profiles: { [id]: DEFAULT_PROFILE() } };
-        }
-        const parsed = JSON.parse(raw);
-        if (!parsed || !parsed.profiles || !parsed.activeId) throw new Error("bad");
-        return parsed;
-      } catch {
-        const id = uid();
-        return { activeId: id, profiles: { [id]: DEFAULT_PROFILE() } };
-      }
-    }
-
-    function saveStore(){
-      try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e){}
-    }
 
     let store = loadStore();
     let activeId = store.activeId;
@@ -759,6 +707,9 @@
       if (document.visibilityState === "visible" && running) requestWakeLock();
     });
 
+    function setToast(msg){ toastEl.textContent = msg || ""; }
+    function setProfileToast(msg){ profileToastEl.textContent = msg || ""; }
+
     // TTS
     function pickEnglishVoice(){
       const voices = speechSynthesis.getVoices?.() || [];
@@ -791,14 +742,39 @@
       const s = total % 60;
       return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
     }
-
     function clampInt(n, a, b){
       n = Number(n);
       if (!Number.isFinite(n)) n = a;
       return Math.max(a, Math.min(b, Math.round(n)));
     }
-
     function cssKey(k){ return k.replace("/","_"); }
+
+    function loadStore(){
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw){
+          const id = uid();
+          return { activeId: id, profiles: { [id]: DEFAULT_PROFILE() } };
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.profiles || !parsed.activeId) throw new Error("bad");
+        return parsed;
+      } catch {
+        const id = uid();
+        return { activeId: id, profiles: { [id]: DEFAULT_PROFILE() } };
+      }
+    }
+    function saveStore(){
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e){}
+    }
+    function uid(){
+      return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+    }
+    function saveActiveProfile(){
+      store.activeId = activeId;
+      store.profiles[activeId] = profile;
+      saveStore();
+    }
 
     function hexToRgb(hex){
       const h = (hex || "").replace("#","").trim();
@@ -889,6 +865,7 @@
       return (profile.modes[key]?.label || key);
     }
 
+    // Rotation with weight
     function buildRotation(){
       const list = [];
       for (const k of MODE_KEYS){
@@ -910,17 +887,14 @@
     }
 
     function lockInputs(lock){
-      // mode checks + settings + profile controls + slider + warnings
       for (const k of MODE_KEYS){
         const cb = el("cb_" + cssKey(k));
         if (cb) cb.disabled = lock;
-
         const blk = document.querySelector(`[data-mode="${cssKey(k)}"]`);
         if (blk){
           blk.querySelectorAll("input,select").forEach(x => x.disabled = lock);
         }
       }
-
       customMin.disabled = lock;
       testVoiceBtn.disabled = lock;
 
@@ -960,16 +934,24 @@
       inCountdown = false;
     }
 
+    function beginHeatTimer(){
+      warned60 = warned30 = warned10 = false;
+      setBlink(false);
+
+      slotStartedAt = Date.now();
+      slotEndsAt = slotStartedAt + durationMs;
+
+      tick();
+      tickTimer = setInterval(tick, 80);
+    }
+
     function doSoftStartThenRun(currentKey){
-      // 3..2..1 go, then start heat timer
       inCountdown = true;
       badge.textContent = "GET READY";
       subEl.textContent = "Soft start";
-      timeEl.textContent = "00:03";
       resetCar();
       startCarEffects();
 
-      // Speak the mode first, then countdown
       speak(`${voiceTextFor(currentKey)}`);
 
       const steps = [3,2,1];
@@ -993,18 +975,8 @@
         }
       };
 
+      timeEl.textContent = "00:03";
       countdownTimer = setTimeout(step, 450);
-    }
-
-    function beginHeatTimer(){
-      warned60 = warned30 = warned10 = false;
-      setBlink(false);
-
-      slotStartedAt = Date.now();
-      slotEndsAt = slotStartedAt + durationMs;
-
-      tick();
-      tickTimer = setInterval(tick, 80);
     }
 
     function startSlot(){
@@ -1023,7 +995,6 @@
       resetCar();
       startCarEffects();
 
-      // Soft start delays actual timer
       if (profile.warnings.softStart){
         doSoftStartThenRun(currentKey);
       } else {
@@ -1041,7 +1012,6 @@
       timeEl.textContent = fmtMMSS(remaining);
       setCarProgress(now);
 
-      // warnings
       if (remaining > 0){
         if (profile.warnings.s60 && !warned60 && remaining <= 60*1000){
           warned60 = true;
@@ -1147,19 +1117,10 @@
       startSlot();
     }
 
-    // ===== Profiles =====
-    function saveActiveProfile(){
-      store.activeId = activeId;
-      store.profiles[activeId] = profile;
-      saveStore();
-      setProfileToast("Saved.");
-      setTimeout(() => setProfileToast(""), 1000);
-    }
-
+    // Profiles UI
     function rebuildProfileSelect(){
       profileSelect.innerHTML = "";
       const entries = Object.entries(store.profiles);
-      // stable-ish order: by name
       entries.sort((a,b) => String(a[1]?.name||"").localeCompare(String(b[1]?.name||"")));
       for (const [id, p] of entries){
         const opt = document.createElement("option");
@@ -1179,7 +1140,6 @@
       intervalMin = clampInt(profile.durationMin, 2, 60);
       durationMs = intervalMin * 60 * 1000;
 
-      // warnings UI
       w60.checked = !!profile.warnings.s60;
       w30.checked = !!profile.warnings.s30;
       w10.checked = !!profile.warnings.s10;
@@ -1203,33 +1163,9 @@
     }
 
     function exportConfig(){
-      const payload = {
-        v: 1,
-        profile
-      };
+      const payload = { v: 2, profile };
       const txt = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      // show prompt for easy copy
       prompt("Copy this config string:", txt);
-    }
-
-    function importConfig(){
-      const txt = prompt("Paste config string here:");
-      if (!txt) return;
-      try{
-        const raw = decodeURIComponent(escape(atob(txt)));
-        const parsed = JSON.parse(raw);
-        if (!parsed || parsed.v !== 1 || !parsed.profile) throw new Error("bad");
-        const id = uid();
-        const p = sanitizeProfile(parsed.profile);
-        store.profiles[id] = p;
-        saveStore();
-        rebuildProfileSelect();
-        switchToProfile(id);
-        setProfileToast("Imported.");
-      } catch {
-        setProfileToast("Import failed.");
-      }
-      setTimeout(() => setProfileToast(""), 1200);
     }
 
     function sanitizeProfile(p){
@@ -1253,7 +1189,27 @@
       return base;
     }
 
-    // ===== UI builders =====
+    function importConfig(){
+      const txt = prompt("Paste config string here:");
+      if (!txt) return;
+      try{
+        const raw = decodeURIComponent(escape(atob(txt)));
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.v !== 2 || !parsed.profile) throw new Error("bad");
+        const id = uid();
+        const p = sanitizeProfile(parsed.profile);
+        store.profiles[id] = p;
+        saveStore();
+        rebuildProfileSelect();
+        switchToProfile(id);
+        setProfileToast("Imported.");
+      } catch {
+        setProfileToast("Import failed.");
+      }
+      setTimeout(() => setProfileToast(""), 1200);
+    }
+
+    // Mode checks + settings
     function escapeHtml(s){
       return String(s ?? "")
         .replaceAll("&","&amp;")
@@ -1299,7 +1255,6 @@
 
         block.innerHTML = `
           <summary>${escapeHtml(m.label || k)} settings</summary>
-
           <div class="modeForm">
             <div class="field">
               <label>Label on screen</label>
@@ -1313,7 +1268,7 @@
 
             <div class="field">
               <label>Weight (how often in rotation)</label>
-              <input class="num" type="number" min="1" max="20" step="1" value="${escapeAttr(m.weight ?? 1)}" data-field="weight">
+              <input type="number" min="1" max="20" step="1" value="${escapeAttr(m.weight ?? 1)}" data-field="weight">
             </div>
 
             <div class="inline2">
@@ -1368,7 +1323,8 @@
             }
 
             saveActiveProfile();
-            buildModeChecks();
+            buildModeChecks();      // uppdaterar checklista + färgprick
+            buildModeSettings();    // uppdaterar summary-texter
             if (!running) refreshIdleView();
           });
         });
@@ -1439,11 +1395,9 @@
     fsBtn.onclick = toggleFullscreen;
     fsBtnRun.onclick = toggleFullscreen;
 
-    // Profile controls
     profileSelect.onchange = () => {
       if (running) return;
-      const id = profileSelect.value;
-      switchToProfile(id);
+      switchToProfile(profileSelect.value);
     };
 
     newProfileBtn.onclick = () => {
@@ -1464,6 +1418,8 @@
     saveProfileBtn.onclick = () => {
       if (running) return;
       saveActiveProfile();
+      setProfileToast("Saved.");
+      setTimeout(() => setProfileToast(""), 1000);
     };
 
     renameProfileBtn.onclick = () => {
@@ -1472,6 +1428,7 @@
       if (!name) return;
       profile.name = name;
       saveActiveProfile();
+      saveStore();
       rebuildProfileSelect();
       setProfileToast("Renamed.");
       setTimeout(() => setProfileToast(""), 1000);
@@ -1484,12 +1441,9 @@
         setTimeout(() => setProfileToast(""), 1200);
         return;
       }
-      const ok = confirm(`Delete profile "${profile.name}"?`);
-      if (!ok) return;
+      if (!confirm(`Delete profile "${profile.name}"?`)) return;
 
       delete store.profiles[activeId];
-
-      // pick another
       const nextId = Object.keys(store.profiles)[0];
       store.activeId = nextId;
       saveStore();
@@ -1500,44 +1454,18 @@
       setTimeout(() => setProfileToast(""), 1000);
     };
 
-    exportBtn.onclick = () => {
-      if (running) return;
-      exportConfig();
-    };
-
-    importBtn.onclick = () => {
-      if (running) return;
-      importConfig();
-    };
+    exportBtn.onclick = () => { if (!running) exportConfig(); };
+    importBtn.onclick = () => { if (!running) importConfig(); };
 
     resetBtn.onclick = () => {
       if (running) return;
-      const ok = confirm("Reset current profile to defaults?");
-      if (!ok) return;
+      if (!confirm("Reset current profile to defaults?")) return;
       const keepName = profile.name || "Default";
       profile = DEFAULT_PROFILE();
       profile.name = keepName;
-
       store.profiles[activeId] = profile;
       saveStore();
-
-      // apply
-      intervalMin = clampInt(profile.durationMin, 2, 60);
-      durationMs = intervalMin * 60 * 1000;
-
-      w60.checked = !!profile.warnings.s60;
-      w30.checked = !!profile.warnings.s30;
-      w10.checked = !!profile.warnings.s10;
-      softStart.checked = !!profile.warnings.softStart;
-
-      customMin.value = String(intervalMin);
-      intervalLabel.textContent = `${intervalMin} min`;
-      customLabel.textContent = `${intervalMin} min`;
-
-      buildModeChecks();
-      buildModeSettings();
-      refreshIdleView();
-
+      switchToProfile(activeId);
       setProfileToast("Reset.");
       setTimeout(() => setProfileToast(""), 1000);
     };
@@ -1552,16 +1480,14 @@
       hideSplash();
     };
 
-    // init
+    // Init
     rebuildProfileSelect();
 
-    // apply warnings UI
     w60.checked = !!profile.warnings.s60;
     w30.checked = !!profile.warnings.s30;
     w10.checked = !!profile.warnings.s10;
     softStart.checked = !!profile.warnings.softStart;
 
-    // duration
     customMin.value = String(intervalMin);
     intervalLabel.textContent = `${intervalMin} min`;
     customLabel.textContent = `${intervalMin} min`;

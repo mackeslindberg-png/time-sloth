@@ -32,12 +32,10 @@
     body{
       background: var(--bg);
       color: var(--fg);
-      overflow:auto; /* FIX: allow scroll */
+      overflow:auto;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
-
-    /* FIX: lock scroll only when running */
     body.run{ overflow:hidden; }
 
     .wrap{
@@ -48,8 +46,6 @@
       display:flex;
       flex-direction:column;
       gap: 12px;
-
-      /* FIX: smoother scroll on mobile */
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -151,7 +147,6 @@
       font-weight: 900;
     }
 
-    /* Stage */
     .stage{
       flex: 1 1 auto;
       display:flex;
@@ -235,7 +230,6 @@
     .blinkTime{ animation: blink 0.85s step-end infinite; }
     @keyframes blink{ 50%{ opacity: .15; } }
 
-    /* Splash */
     .splash{
       position:fixed;
       inset:0;
@@ -257,7 +251,6 @@
     .splashSub{ font-size: calc(13px * var(--scale)); opacity: .78; max-width: 46ch; line-height: 1.35; font-weight:800; }
     .splashBtn{ margin-top: 8px; width: min(360px, 92vw); }
 
-    /* Run view */
     body.run .panel{ display:none; }
     body.run .wrap{ gap: 0; overflow: hidden; }
     body.run .topbar{ display:none; }
@@ -288,7 +281,6 @@
       font-size: calc(16px * var(--scale));
     }
 
-    /* Fullscreen button in run mode */
     .fsFloat{
       position: fixed;
       top: calc(10px + env(safe-area-inset-top));
@@ -306,7 +298,6 @@
       border-color: rgba(255,255,255,.22);
     }
 
-    /* Custom time slider */
     .sliderRow{
       margin-top: 10px;
       display:flex;
@@ -326,7 +317,6 @@
       font-size: calc(12px * var(--scale));
     }
 
-    /* Settings per mode */
     details{
       border: 1px solid rgba(255,255,255,.14);
       border-radius: 14px;
@@ -369,7 +359,6 @@
     }
     .toggleRow input{ transform: scale(1.25); }
 
-    /* Track with flags + car */
     .track{
       position:absolute;
       left: 14px;
@@ -519,7 +508,7 @@
     <div class="panel">
       <div class="row">
         <div class="small"><b>Groups</b> (order below)</div>
-        <div class="small">Time: <b id="intervalLabel">10 min</b></div>
+        <div class="small">Default time: <b id="intervalLabel">10 min</b></div>
       </div>
 
       <div class="grid cols2" style="margin-top:10px;" id="modeChecks"></div>
@@ -540,7 +529,7 @@
       </div>
 
       <div class="toast" id="toast"></div>
-      <div class="hint">Weight styr hur ofta en grupp dyker upp i rotationen.</div>
+      <div class="hint">Weight styr hur ofta en grupp dyker upp i rotationen. Varje grupp kan även ha egen slot-tid.</div>
     </div>
 
     <!-- Warnings -->
@@ -550,8 +539,12 @@
         <div class="small">Voice prompts</div>
       </div>
       <div class="grid cols2" style="margin-top:10px;">
+        <div class="chip"><label><input type="checkbox" id="w600"> 10 min warning</label></div>
+        <div class="chip"><label><input type="checkbox" id="w300"> 5 min warning</label></div>
+
         <div class="chip"><label><input type="checkbox" id="w60" checked> 60s warning</label></div>
         <div class="chip"><label><input type="checkbox" id="w30" checked> 30s warning</label></div>
+
         <div class="chip"><label><input type="checkbox" id="w10" checked> 10s countdown</label></div>
         <div class="chip"><label><input type="checkbox" id="softStart" checked> Soft start (3..2..1)</label></div>
       </div>
@@ -561,7 +554,7 @@
     <div class="panel" id="settingsPanel">
       <div class="row">
         <div class="small"><b>Group settings</b></div>
-        <div class="small">Label + Voice + Colors + Weight</div>
+        <div class="small">Label + Voice + Colors + Weight + Slot time</div>
       </div>
       <div class="grid" style="margin-top:10px; gap:10px;" id="modeSettings"></div>
     </div>
@@ -644,9 +637,11 @@
     const fsBtn = el("fsBtn");
     const fsBtnRun = el("fsBtnRun");
 
-    const w60 = el("w60");
-    const w30 = el("w30");
-    const w10 = el("w10");
+    const w600 = el("w600");
+    const w300 = el("w300");
+    const w60  = el("w60");
+    const w30  = el("w30");
+    const w10  = el("w10");
     const softStart = el("softStart");
 
     const profileSelect = el("profileSelect");
@@ -659,15 +654,15 @@
     const resetBtn = el("resetBtn");
 
     const MODE_KEYS = ["Group 1","Group 2","Group 3","Group 4","Group 5","Group 6"];
-    const LS_KEY = "ts_pro_profiles_groups_v2";
+    const LS_KEY = "ts_pro_profiles_groups_v3";
 
     const DEFAULT_MODE = {
-      "Group 1": { label:"Group 1", voice:"Group 1", weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59" },
-      "Group 2": { label:"Group 2", voice:"Group 2", weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00" },
-      "Group 3": { label:"Group 3", voice:"Group 3", weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12" },
-      "Group 4": { label:"Group 4", voice:"Group 4", weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40" },
-      "Group 5": { label:"Group 5", voice:"Group 5", weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f" },
-      "Group 6": { label:"Group 6", voice:"Group 6", weight:1, twoTone:false, split:"lr", c1:"#455a64", c2:"#1c262b" }
+      "Group 1": { label:"Group 1", voice:"Group 1", weight:1, twoTone:false, split:"lr", c1:"#1e5aa8", c2:"#0b2f59", slotMin: "" },
+      "Group 2": { label:"Group 2", voice:"Group 2", weight:1, twoTone:false, split:"lr", c1:"#f08a1a", c2:"#8a4a00", slotMin: "" },
+      "Group 3": { label:"Group 3", voice:"Group 3", weight:1, twoTone:false, split:"lr", c1:"#2e7d32", c2:"#0f3b12", slotMin: "" },
+      "Group 4": { label:"Group 4", voice:"Group 4", weight:1, twoTone:false, split:"lr", c1:"#6a1b9a", c2:"#2d0b40", slotMin: "" },
+      "Group 5": { label:"Group 5", voice:"Group 5", weight:1, twoTone:false, split:"lr", c1:"#c62828", c2:"#5c0f0f", slotMin: "" },
+      "Group 6": { label:"Group 6", voice:"Group 6", weight:1, twoTone:false, split:"lr", c1:"#455a64", c2:"#1c262b", slotMin: "" }
     };
 
     const DEFAULT_PROFILE = () => ({
@@ -681,7 +676,7 @@
         "Group 5": true,
         "Group 6": true
       },
-      warnings: { s60:true, s30:true, s10:true, softStart:true },
+      warnings: { s600:false, s300:false, s60:true, s30:true, s10:true, softStart:true },
       modes: JSON.parse(JSON.stringify(DEFAULT_MODE))
     });
 
@@ -689,8 +684,12 @@
     let activeId = store.activeId;
     let profile = store.profiles[activeId] || DEFAULT_PROFILE();
 
-    let intervalMin = clampInt(profile.durationMin, 2, 60);
-    let durationMs = intervalMin * 60 * 1000;
+    // Default (profile) duration – can be overridden per group
+    let defaultIntervalMin = clampInt(profile.durationMin, 2, 60);
+
+    // Current slot duration (changes per group)
+    let slotIntervalMin = defaultIntervalMin;
+    let durationMs = slotIntervalMin * 60 * 1000;
 
     let running = false;
     let rotation = [];
@@ -700,6 +699,8 @@
     let slotEndsAt = 0;
     let tickTimer = null;
 
+    let warned600 = false;
+    let warned300 = false;
     let warned60 = false;
     let warned30 = false;
     let warned10 = false;
@@ -724,7 +725,7 @@
     function setToast(msg){ toastEl.textContent = msg || ""; }
     function setProfileToast(msg){ profileToastEl.textContent = msg || ""; }
 
-    // TTS
+    // --- TTS queue: no overlap ---
     function pickEnglishVoice(){
       const voices = speechSynthesis.getVoices?.() || [];
       return voices.find(v => /en-US/i.test(v.lang)) ||
@@ -732,28 +733,18 @@
              voices.find(v => /^en/i.test(v.lang)) || null;
     }
 
-    // Fast, cancels previous
-    function speakNow(text){
-      try{
-        if (!("speechSynthesis" in window)) return;
-        speechSynthesis.getVoices?.();
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "en-US";
-        const v = pickEnglishVoice();
-        if (v) u.voice = v;
-        u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
-        speechSynthesis.speak(u);
-      } catch(e){}
-    }
+    let ttsChain = Promise.resolve();
 
-    // Queued, does NOT cancel
     function speakQueued(text){
-      return new Promise((resolve) => {
+      const msg = String(text || "").trim();
+      if (!msg) return Promise.resolve();
+
+      if (!("speechSynthesis" in window)) return Promise.resolve();
+
+      ttsChain = ttsChain.then(() => new Promise((resolve) => {
         try{
-          if (!("speechSynthesis" in window)) return resolve();
           speechSynthesis.getVoices?.();
-          const u = new SpeechSynthesisUtterance(text);
+          const u = new SpeechSynthesisUtterance(msg);
           u.lang = "en-US";
           const v = pickEnglishVoice();
           if (v) u.voice = v;
@@ -761,17 +752,24 @@
           u.onend = () => resolve();
           u.onerror = () => resolve();
           speechSynthesis.speak(u);
-        } catch(e){
+        } catch {
           resolve();
         }
-      });
+      }));
+
+      return ttsChain;
     }
 
-    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    function cancelSpeech(){
+      try{ if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e){}
+      ttsChain = Promise.resolve();
+    }
 
     if ("speechSynthesis" in window && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => pickEnglishVoice();
     }
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
     function fmtMMSS(ms){
       const total = Math.max(0, Math.ceil(ms / 1000));
@@ -904,6 +902,13 @@
       return (profile.modes[key]?.label || key);
     }
 
+    function getSlotMinFor(key){
+      const raw = profile.modes[key]?.slotMin;
+      const n = Number(String(raw ?? "").trim());
+      if (Number.isFinite(n) && n >= 1 && n <= 60) return Math.round(n);
+      return clampInt(profile.durationMin, 2, 60);
+    }
+
     function buildRotation(){
       const list = [];
       for (const k of MODE_KEYS){
@@ -936,6 +941,8 @@
       customMin.disabled = lock;
       testVoiceBtn.disabled = lock;
 
+      w600.disabled = lock;
+      w300.disabled = lock;
       w60.disabled = lock;
       w30.disabled = lock;
       w10.disabled = lock;
@@ -951,17 +958,19 @@
       resetBtn.disabled = lock;
     }
 
-    function setDurationMinutes(min){
-      intervalMin = clampInt(min, 2, 60);
-      profile.durationMin = intervalMin;
-      durationMs = intervalMin * 60 * 1000;
+    function setDefaultDurationMinutes(min){
+      defaultIntervalMin = clampInt(min, 2, 60);
+      profile.durationMin = defaultIntervalMin;
 
-      intervalLabel.textContent = `${intervalMin} min`;
-      customLabel.textContent = `${intervalMin} min`;
-      if (!running) timeEl.textContent = fmtMMSS(durationMs);
+      intervalLabel.textContent = `${defaultIntervalMin} min`;
+      customLabel.textContent = `${defaultIntervalMin} min`;
+
+      if (!running){
+        refreshIdleView();
+      }
 
       saveActiveProfile();
-      setToast(`Time set to ${intervalMin} minutes.`);
+      setToast(`Default time set to ${defaultIntervalMin} minutes.`);
     }
 
     function clearCountdown(){
@@ -969,7 +978,7 @@
     }
 
     function beginHeatTimer(){
-      warned60 = warned30 = warned10 = false;
+      warned600 = warned300 = warned60 = warned30 = warned10 = false;
       setBlink(false);
 
       slotStartedAt = Date.now();
@@ -986,16 +995,15 @@
       resetCar();
       startCarEffects();
 
-      // Speak group + minutes fully, then do 3..2..1..Go
-      await speakQueued(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
-      await sleep(200);
+      await speakQueued(`${voiceTextFor(currentKey)}, ${slotIntervalMin} minutes`);
+      await sleep(150);
 
       const steps = [3,2,1];
       for (const n of steps){
         if (!running) return;
         timeEl.textContent = "00:0" + n;
         await speakQueued(String(n));
-        await sleep(200);
+        await sleep(150);
       }
 
       if (!running) return;
@@ -1005,9 +1013,13 @@
       beginHeatTimer();
     }
 
-    function startSlot(){
+    async function startSlot(){
       const currentKey = rotation[idx];
       const nextKey = getNextKey();
+
+      // Slot duration from group override or profile default
+      slotIntervalMin = getSlotMinFor(currentKey);
+      durationMs = slotIntervalMin * 60 * 1000;
 
       applyStageTheme(currentKey);
 
@@ -1016,15 +1028,15 @@
 
       modeEl.textContent = labelFor(currentKey);
       nextEl.textContent = `NEXT UP: ${labelFor(nextKey)}`;
-      subEl.textContent = `${intervalMin} min slot`;
+      subEl.textContent = `${slotIntervalMin} min slot`;
 
       resetCar();
       startCarEffects();
 
       if (profile.warnings.softStart){
-        doSoftStartThenRun(currentKey);
+        await doSoftStartThenRun(currentKey);
       } else {
-        speakNow(`${voiceTextFor(currentKey)}, ${intervalMin} minutes`);
+        await speakQueued(`${voiceTextFor(currentKey)}, ${slotIntervalMin} minutes`);
         beginHeatTimer();
       }
     }
@@ -1039,26 +1051,38 @@
       setCarProgress(now);
 
       if (remaining > 0){
+        // 10 min warning
+        if (profile.warnings.s600 && !warned600 && remaining <= 600*1000 && durationMs >= 600*1000){
+          warned600 = true;
+          speakQueued("Ten minutes left");
+        }
+
+        // 5 min warning
+        if (profile.warnings.s300 && !warned300 && remaining <= 300*1000 && durationMs >= 300*1000){
+          warned300 = true;
+          speakQueued("Five minutes left");
+        }
+
         if (profile.warnings.s60 && !warned60 && remaining <= 60*1000){
           warned60 = true;
           const nextKey = getNextKey();
-          speakNow(`One minute left. ${voiceTextFor(nextKey)}, get ready`);
+          speakQueued(`One minute left. ${voiceTextFor(nextKey)}, get ready`);
           setBlink(true);
         }
         if (profile.warnings.s30 && !warned30 && remaining <= 30*1000){
           warned30 = true;
-          speakNow("Thirty seconds");
+          speakQueued("Thirty seconds");
         }
         if (profile.warnings.s10 && !warned10 && remaining <= 10*1000){
           warned10 = true;
-          speakNow("Ten seconds");
+          speakQueued("Ten seconds");
         }
       }
 
       if (remaining <= 0) endSlot();
     }
 
-    function endSlot(){
+    async function endSlot(){
       if (tickTimer){
         clearInterval(tickTimer);
         tickTimer = null;
@@ -1069,7 +1093,7 @@
       stopCarEffects();
 
       const currentKey = rotation[idx];
-      speakNow(`${voiceTextFor(currentKey)} training end`);
+      await speakQueued(`${voiceTextFor(currentKey)} training end`);
 
       idx = (idx + 1) % rotation.length;
       startSlot();
@@ -1106,8 +1130,7 @@
         tickTimer = null;
       }
       clearCountdown();
-
-      try{ if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e){}
+      cancelSpeech();
 
       badge.textContent = "STOPPED";
       statusEl.textContent = "Stopped";
@@ -1124,7 +1147,7 @@
       refreshIdleView();
     }
 
-    function skip(){
+    async function skip(){
       if (!running || rotation.length === 0) return;
 
       if (tickTimer){
@@ -1137,7 +1160,7 @@
       stopCarEffects();
 
       const currentKey = rotation[idx];
-      speakNow(`${voiceTextFor(currentKey)} training end`);
+      await speakQueued(`${voiceTextFor(currentKey)} training end`);
 
       idx = (idx + 1) % rotation.length;
       startSlot();
@@ -1162,17 +1185,18 @@
       activeId = id;
       profile = p;
 
-      intervalMin = clampInt(profile.durationMin, 2, 60);
-      durationMs = intervalMin * 60 * 1000;
+      defaultIntervalMin = clampInt(profile.durationMin, 2, 60);
 
-      w60.checked = !!profile.warnings.s60;
-      w30.checked = !!profile.warnings.s30;
-      w10.checked = !!profile.warnings.s10;
+      w600.checked = !!profile.warnings.s600;
+      w300.checked = !!profile.warnings.s300;
+      w60.checked  = !!profile.warnings.s60;
+      w30.checked  = !!profile.warnings.s30;
+      w10.checked  = !!profile.warnings.s10;
       softStart.checked = !!profile.warnings.softStart;
 
-      customMin.value = String(intervalMin);
-      intervalLabel.textContent = `${intervalMin} min`;
-      customLabel.textContent = `${intervalMin} min`;
+      customMin.value = String(defaultIntervalMin);
+      intervalLabel.textContent = `${defaultIntervalMin} min`;
+      customLabel.textContent = `${defaultIntervalMin} min`;
 
       buildModeChecks();
       buildModeSettings();
@@ -1188,7 +1212,7 @@
     }
 
     function exportConfig(){
-      const payload = { v: 2, profile };
+      const payload = { v: 3, profile };
       const txt = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
       prompt("Copy this config string:", txt);
     }
@@ -1204,12 +1228,25 @@
       for (const k of MODE_KEYS){
         base.modes[k] = { ...base.modes[k], ...((p.modes||{})[k] || {}) };
         base.modes[k].label = String(base.modes[k].label || k).slice(0,20) || k;
-        base.modes[k].voice = String(base.modes[k].voice || base.modes[k].label || k).slice(0,60);
+
+        // default: voice follows label
+        const incomingVoice = String(base.modes[k].voice ?? "").trim();
+        base.modes[k].voice = (incomingVoice.length ? incomingVoice : base.modes[k].label).slice(0,60);
+
         base.modes[k].weight = clampInt(base.modes[k].weight, 1, 20);
         base.modes[k].twoTone = !!base.modes[k].twoTone;
         base.modes[k].split = (base.modes[k].split === "tb") ? "tb" : "lr";
         base.modes[k].c1 = String(base.modes[k].c1 || "#000000");
         base.modes[k].c2 = String(base.modes[k].c2 || "#000000");
+
+        // slotMin: allow blank, else clamp 1..60
+        const sm = String(base.modes[k].slotMin ?? "").trim();
+        if (sm === ""){
+          base.modes[k].slotMin = "";
+        } else {
+          const n = clampInt(sm, 1, 60);
+          base.modes[k].slotMin = String(n);
+        }
       }
       return base;
     }
@@ -1220,7 +1257,7 @@
       try{
         const raw = decodeURIComponent(escape(atob(txt)));
         const parsed = JSON.parse(raw);
-        if (!parsed || parsed.v !== 2 || !parsed.profile) throw new Error("bad");
+        if (!parsed || (parsed.v !== 2 && parsed.v !== 3) || !parsed.profile) throw new Error("bad");
         const id = uid();
         const p = sanitizeProfile(parsed.profile);
         store.profiles[id] = p;
@@ -1253,7 +1290,7 @@
 
         const wrap = document.createElement("div");
         wrap.className = "chip";
-        wrap.dataset.chip = cssKey(k); /* FIX: stable selector */
+        wrap.dataset.chip = cssKey(k);
 
         wrap.innerHTML = `
           <label>
@@ -1290,6 +1327,11 @@
             <div class="field">
               <label>Voice text</label>
               <input type="text" value="${escapeAttr(m.voice || "")}" data-field="voice">
+            </div>
+
+            <div class="field">
+              <label>Slot time (min) (blank = default)</label>
+              <input type="number" min="1" max="60" step="1" value="${escapeAttr(m.slotMin ?? "")}" placeholder="${escapeAttr(String(profile.durationMin || 10))}" data-field="slotMin">
             </div>
 
             <div class="field">
@@ -1339,7 +1381,6 @@
               const prevLabel = m.label;
               m.label = String(inp.value || "").trim().slice(0, 20) || k;
 
-              // If voice was same as old label (or empty), keep voice synced to label
               const voiceTrim = String(m.voice || "").trim();
               if (!voiceTrim || voiceTrim === String(prevLabel || "").trim()){
                 m.voice = m.label;
@@ -1347,7 +1388,18 @@
                 if (voiceInput) voiceInput.value = m.voice;
               }
             } else if (field === "voice"){
-              m.voice = String(inp.value || "").trim().slice(0, 60) || m.label || k;
+              // if user clears voice => follow label
+              const v = String(inp.value || "").trim().slice(0, 60);
+              m.voice = v.length ? v : (m.label || k);
+            } else if (field === "slotMin"){
+              const raw = String(inp.value ?? "").trim();
+              if (raw === ""){
+                m.slotMin = "";
+              } else {
+                const n = clampInt(raw, 1, 60);
+                m.slotMin = String(n);
+                inp.value = m.slotMin;
+              }
             } else if (field === "weight"){
               m.weight = clampInt(inp.value, 1, 20);
               inp.value = String(m.weight);
@@ -1359,7 +1411,6 @@
 
             saveActiveProfile();
 
-            // FIX: update UI without rebuilding (keeps dropdown open + cursor stays)
             const sum = block.querySelector("summary");
             if (sum) sum.textContent = `${m.label || k} settings`;
 
@@ -1398,11 +1449,14 @@
       const firstKey = rot[0];
       const nextKey = (rot.length === 1) ? firstKey : rot[1];
 
+      const previewMin = getSlotMinFor(firstKey);
+      const previewMs = previewMin * 60 * 1000;
+
       badge.textContent = "IDLE";
       modeEl.textContent = labelFor(firstKey);
-      timeEl.textContent = fmtMMSS(durationMs);
+      timeEl.textContent = fmtMMSS(previewMs);
       nextEl.textContent = `NEXT UP: ${labelFor(nextKey)}`;
-      subEl.textContent = `${intervalMin} min slot`;
+      subEl.textContent = `${previewMin} min slot`;
 
       applyStageTheme(firstKey);
       setBlink(false);
@@ -1419,11 +1473,14 @@
       } catch(e){}
     }
 
-    customMin.oninput = () => setDurationMinutes(customMin.value);
+    // Events
+    customMin.oninput = () => setDefaultDurationMinutes(customMin.value);
 
-    w60.onchange = () => { profile.warnings.s60 = !!w60.checked; saveActiveProfile(); };
-    w30.onchange = () => { profile.warnings.s30 = !!w30.checked; saveActiveProfile(); };
-    w10.onchange = () => { profile.warnings.s10 = !!w10.checked; saveActiveProfile(); };
+    w600.onchange = () => { profile.warnings.s600 = !!w600.checked; saveActiveProfile(); };
+    w300.onchange = () => { profile.warnings.s300 = !!w300.checked; saveActiveProfile(); };
+    w60.onchange  = () => { profile.warnings.s60  = !!w60.checked;  saveActiveProfile(); };
+    w30.onchange  = () => { profile.warnings.s30  = !!w30.checked;  saveActiveProfile(); };
+    w10.onchange  = () => { profile.warnings.s10  = !!w10.checked;  saveActiveProfile(); };
     softStart.onchange = () => { profile.warnings.softStart = !!softStart.checked; saveActiveProfile(); };
 
     startBtn.onclick = start;
@@ -1431,8 +1488,8 @@
     stopRunBtn.onclick = stop;
     skipRunBtn.onclick = skip;
 
-    testVoiceBtn.onclick = () => {
-      speakNow("Test voice. time slash sloth pro.");
+    testVoiceBtn.onclick = async () => {
+      await speakQueued("Test voice. time slash sloth pro.");
       setToast("If you heard that, voice is working.");
     };
 
@@ -1518,23 +1575,25 @@
       splash.classList.add("hide");
       setTimeout(() => { splash.style.display = "none"; }, 450);
     }
-    enterBtn.onclick = () => {
-      speakNow("Voice enabled");
-      setTimeout(() => { try { speechSynthesis.getVoices?.(); } catch(e){} }, 200);
+    enterBtn.onclick = async () => {
+      cancelSpeech();
+      await speakQueued("Voice enabled");
       hideSplash();
     };
 
     // Init
     rebuildProfileSelect();
 
-    w60.checked = !!profile.warnings.s60;
-    w30.checked = !!profile.warnings.s30;
-    w10.checked = !!profile.warnings.s10;
+    w600.checked = !!profile.warnings.s600;
+    w300.checked = !!profile.warnings.s300;
+    w60.checked  = !!profile.warnings.s60;
+    w30.checked  = !!profile.warnings.s30;
+    w10.checked  = !!profile.warnings.s10;
     softStart.checked = !!profile.warnings.softStart;
 
-    customMin.value = String(intervalMin);
-    intervalLabel.textContent = `${intervalMin} min`;
-    customLabel.textContent = `${intervalMin} min`;
+    customMin.value = String(defaultIntervalMin);
+    intervalLabel.textContent = `${defaultIntervalMin} min`;
+    customLabel.textContent = `${defaultIntervalMin} min`;
 
     buildModeChecks();
     buildModeSettings();

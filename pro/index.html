@@ -1472,6 +1472,11 @@
         }
       } catch(e){}
     }
+    window.startLive = async function () {
+  const res = await timeSlothLive.startTestSession();
+  const qrLink = res.statusUrl;
+  alert(qrLink);
+};
 
     // Events
     customMin.oninput = () => setDefaultDurationMinutes(customMin.value);

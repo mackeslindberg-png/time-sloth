@@ -1599,5 +1599,62 @@
     buildModeSettings();
     refreshIdleView();
   </script>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAcCRjtWpBEptwnlouaA4khMFHcDm7BjrE",
+    authDomain: "time-sloth-live.firebaseapp.com",
+    databaseURL: "https://time-sloth-live-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "time-sloth-live",
+    storageBucket: "time-sloth-live.firebasestorage.app",
+    messagingSenderId: "1011472987100",
+    appId: "1:1011472987100:web:483c2dac92f8158df59519"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  function makeSessionId() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const rand = Math.random().toString(36).slice(2, 8);
+    return `ts-${y}${m}${day}-${rand}`;
+  }
+
+  window.timeSlothLive = {
+    async startTestSession() {
+      await signInAnonymously(auth);
+
+      const uid = auth.currentUser.uid;
+      const sessionId = makeSessionId();
+
+      await set(ref(db, `sessions/${sessionId}`), {
+        ownerUid: uid,
+        createdAt: Date.now(),
+        status: {
+          modeName: "LIVE TEST",
+          phase: "running",
+          endsAt: Date.now() + 5 * 60 * 1000,
+          updatedAt: Date.now()
+        }
+      });
+
+      const statusUrl = `https://mackeslindberg-png.github.io/time-sloth/pro/status.html?s=${sessionId}`;
+
+      console.log("Session skapad:", sessionId);
+      console.log("Status-länk:", statusUrl);
+
+      alert("Session skapad!\n\n" + statusUrl);
+
+      return { sessionId, statusUrl, uid };
+    }
+  };
+</script>
 </body>
 </html>

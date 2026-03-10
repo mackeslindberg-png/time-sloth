@@ -1634,16 +1634,17 @@
       const uid = auth.currentUser.uid;
       const sessionId = makeSessionId();
 
-      await set(ref(db, `sessions/${sessionId}`), {
-        ownerUid: uid,
-        createdAt: Date.now(),
-        status: {
-          modeName: "LIVE TEST",
-          phase: "running",
-          endsAt: Date.now() + 5 * 60 * 1000,
-          updatedAt: Date.now()
-        }
-      });
+await set(ref(db, `sessions/${sessionId}`), {
+  ownerUid: uid,
+  createdAt: Date.now()
+});
+
+await set(ref(db, `sessions/${sessionId}/status`), {
+  modeName: "LIVE TEST",
+  phase: "running",
+  endsAt: Date.now() + 5 * 60 * 1000,
+  updatedAt: Date.now()
+});
 
       const statusUrl = `https://mackeslindberg-png.github.io/time-sloth/pro/status.html?s=${sessionId}`;
 

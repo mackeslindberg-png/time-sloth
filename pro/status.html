@@ -45,7 +45,8 @@ html,body{
 <div class="wrap">
   <div class="mode" id="mode">Waiting…</div>
   <div class="time" id="time">--:--</div>
-  <div class="small">time/sloth LIVE</div>
+  <div class="small" id="next">NEXT UP: --</div>
+  <div class="small" id="phase">time/sloth LIVE</div>
 </div>
 
 <script type="module">
@@ -88,7 +89,9 @@ onValue(statusRef,(snap)=>{
   const data = snap.val();
   if(!data) return;
 
-  document.getElementById("mode").textContent = data.modeName || "LIVE";
+ document.getElementById("mode").textContent = data.modeName || "LIVE";
+document.getElementById("next").textContent = data.nextName || "NEXT UP: --";
+document.getElementById("phase").textContent = data.phase || "time/sloth LIVE";
 
   const ends = data.endsAt || 0;
 

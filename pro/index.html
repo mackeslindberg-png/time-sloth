@@ -1676,7 +1676,7 @@ const auth = getAuth(app);
 
 let liveSessionId = null;
 
-async function updateLiveStatus(patch = {}) {
+window.updateLiveStatus = async function (patch = {}) {
   if (!liveSessionId) return;
 
   await set(ref(db, `sessions/${liveSessionId}/status`), {
@@ -1687,7 +1687,7 @@ async function updateLiveStatus(patch = {}) {
     updatedAt: Date.now(),
     ...patch
   });
-}
+};
 
     function makeSessionId() {
       const d = new Date();

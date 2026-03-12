@@ -1714,11 +1714,11 @@
           showQrOverlay(statusUrl);
 
           return { sessionId, statusUrl, uid };
-        } catch (err) {
-          console.error("Live QR error:", err);
-          alert("Kunde inte skapa live-session.");
-          throw err;
-        }
+      } catch (err) {
+  console.error("Live QR error:", err);
+  alert("Live QR error:\n\n" + (err?.message || String(err)));
+  throw err;
+}
       }
     };
   </script>

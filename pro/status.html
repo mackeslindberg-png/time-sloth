@@ -50,7 +50,6 @@ html,body{
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
@@ -68,53 +67,65 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 function fmt(ms){
-  const s = Math.max(0, Math.floor(ms/1000));
-  const m = Math.floor(s/60);
-  const r = s%60;
-  return String(m).padStart(2,"0")+":"+String(r).padStart(2,"0");
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
 }
+
+const modeEl = document.getElementById("mode");
+const timeEl = document.getElementById("time");
+const nextEl = document.getElementById("next");
+const phaseEl = document.getElementById("phase");
 
 const params = new URLSearchParams(location.search);
 const sessionId = params.get("s");
 
-if(!sessionId){
-  document.getElementById("mode").textContent="No session";
-  throw new Error("missing session");
+if (!sessionId) {
+  modeEl.textContent = "No session";
+  timeEl.textContent = "--:--";
+  throw new Error("Missing session id");
 }
 
-const statusRef = ref(db,"sessions/"+sessionId+"/status");
+let currentEndsAt = 0;
 
-let countdownTimer = null;
+function renderTime() {
+  if (!currentEndsAt || currentEndsAt <= 0) {
+    timeEl.textContent = "--:--";
+    return;
+  }
+  const left = currentEndsAt - Date.now();
+  timeEl.textContent = fmt(left);
+}
+
+setInterval(renderTime, 200);
+
+const statusRef = ref(db, `sessions/${sessionId}/status`);
 
 onValue(statusRef, (snap) => {
   const data = snap.val();
-  if (!data) return;
-
-  document.getElementById("mode").textContent = data.modeName || "LIVE";
-  document.getElementById("next").textContent = data.nextName || "NEXT UP: --";
-  document.getElementById("phase").textContent = data.phase || "time/sloth LIVE";
-
-  const ends = Number(data.endsAt || 0);
-
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-    countdownTimer = null;
+  if (!data) {
+    modeEl.textContent = "Waiting…";
+    timeEl.textContent = "--:--";
+    if (nextEl) nextEl.textContent = "NEXT UP: --";
+    if (phaseEl) phaseEl.textContent = "time/sloth LIVE";
+    currentEndsAt = 0;
+    return;
   }
 
-  function update() {
-    const left = ends - Date.now();
-    document.getElementById("time").textContent = fmt(left);
+  modeEl.textContent = data.modeName || "LIVE";
+
+  if (nextEl) {
+    nextEl.textContent = data.nextName || "NEXT UP: --";
   }
 
-  update();
-
-  if (ends > 0) {
-    countdownTimer = setInterval(update, 200);
+  if (phaseEl) {
+    phaseEl.textContent = data.phase || "time/sloth LIVE";
   }
+
+  currentEndsAt = Number(data.endsAt || 0);
+  renderTime();
 });
-
-});
-
 </script>
 
 </body>

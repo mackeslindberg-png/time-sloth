@@ -1712,10 +1712,13 @@ function showQrOverlay(statusUrl) {
           const uid = auth.currentUser.uid;
           const sessionId = makeSessionId();
 
-          await set(ref(db, `sessions/${sessionId}`), {
-            ownerUid: uid,
-            createdAt: Date.now()
-          });
+       await set(ref(db, `sessions/${sessionId}/status`), {
+  modeName: modeEl.textContent || "LIVE",
+  nextName: nextEl.textContent || "",
+  phase: badge.textContent || "RUNNING",
+  endsAt: slotEndsAt || (Date.now() + 5 * 60 * 1000),
+  updatedAt: Date.now()
+});
 
           await set(ref(db, `sessions/${sessionId}/status`), {
             modeName: "LIVE TEST",

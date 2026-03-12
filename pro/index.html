@@ -449,9 +449,31 @@
       100%{ transform: translate(-40px,-50%) scale(1.6); opacity: 0; }
     }
   </style>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 
 <body>
+<div id="qrOverlay" style="
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.8);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:9999;
+flex-direction:column;
+gap:20px;
+color:white;
+font-family:sans-serif;
+">
+
+  <div id="qrCode"></div>
+
+ onclick="document.getElementById('qrOverlay').style.display='none';"
+    Stäng
+  </button>
+
+</div>
   <div class="splash" id="splash">
     <img src="../logo.png" class="splashLogo" alt="time/sloth logo">
     <div class="splashText">time/sloth PRO</div>
@@ -1661,7 +1683,16 @@ await set(ref(db, `sessions/${sessionId}/status`), {
       console.log("Session skapad:", sessionId);
       console.log("Status-länk:", statusUrl);
 
-      alert("Session skapad!\n\n" + statusUrl);
+     document.getElementById("qrOverlay").style.display = "flex";
+
+const qrBox = document.getElementById("qrCode");
+qrBox.innerHTML = "";
+
+new QRCode(qrBox, {
+  text: statusUrl,
+  width: 300,
+  height: 300
+});
 
       return { sessionId, statusUrl, uid };
     }

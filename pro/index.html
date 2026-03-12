@@ -1191,9 +1191,11 @@ window.QRCodeReady = true;
       stopBtn.disabled = true;
       lockInputs(false);
 
-      setToast("Stopped.");
-      refreshIdleView();
-    }
+  setToast("Stopped.");
+
+document.getElementById("liveQrPanel").style.display = "none";
+
+refreshIdleView();
 
     async function skip(){
       if (!running || rotation.length === 0) return;
@@ -1672,24 +1674,33 @@ window.QRCodeReady = true;
     }
 
 function showQrOverlay(statusUrl) {
+
   const overlay = document.getElementById("qrOverlay");
   const qrBox = document.getElementById("qrCode");
   const qrText = document.getElementById("qrText");
 
-  const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(statusUrl)}`;
+  const qrImgUrl =
+  "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=" +
+  encodeURIComponent(statusUrl);
 
-  qrBox.innerHTML = `
-    <img
-      src="${qrImgUrl}"
-      alt="QR code"
-      width="320"
-      height="320"
-      style="display:block;border-radius:12px;"
-    >
-  `;
+  qrBox.innerHTML =
+  '<img src="'+qrImgUrl+'" width="320" height="320">';
 
   qrText.textContent = statusUrl;
+
   overlay.style.display = "flex";
+
+  /* lilla QR i hörnet */
+
+  const small =
+  "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=" +
+  encodeURIComponent(statusUrl);
+
+  const panel = document.getElementById("liveQrPanel");
+  const img = document.getElementById("liveQrImg");
+
+  img.src = small;
+  panel.style.display = "block";
 }
 
     window.timeSlothLive = {
@@ -1728,5 +1739,29 @@ function showQrOverlay(statusUrl) {
       }
     };
   </script>
+  <div id="liveQrPanel" style="
+position:fixed;
+bottom:12px;
+right:12px;
+background:rgba(0,0,0,0.7);
+border:1px solid rgba(255,255,255,0.2);
+border-radius:12px;
+padding:10px;
+display:none;
+z-index:999;
+text-align:center;
+">
+
+<div style="font-size:12px;font-weight:700;margin-bottom:6px;">
+LIVE
+</div>
+
+<img id="liveQrImg" width="120" height="120">
+
+<div style="font-size:10px;opacity:.7;margin-top:4px">
+scan
+</div>
+
+</div>
 </body>
 </html>

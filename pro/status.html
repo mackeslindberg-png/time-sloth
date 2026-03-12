@@ -84,24 +84,34 @@ if(!sessionId){
 
 const statusRef = ref(db,"sessions/"+sessionId+"/status");
 
-onValue(statusRef,(snap)=>{
+let countdownTimer = null;
 
+onValue(statusRef, (snap) => {
   const data = snap.val();
-  if(!data) return;
+  if (!data) return;
 
- document.getElementById("mode").textContent = data.modeName || "LIVE";
-document.getElementById("next").textContent = data.nextName || "NEXT UP: --";
-document.getElementById("phase").textContent = data.phase || "time/sloth LIVE";
+  document.getElementById("mode").textContent = data.modeName || "LIVE";
+  document.getElementById("next").textContent = data.nextName || "NEXT UP: --";
+  document.getElementById("phase").textContent = data.phase || "time/sloth LIVE";
 
-  const ends = data.endsAt || 0;
+  const ends = Number(data.endsAt || 0);
 
-  function update(){
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+
+  function update() {
     const left = ends - Date.now();
     document.getElementById("time").textContent = fmt(left);
   }
 
   update();
-  setInterval(update,200);
+
+  if (ends > 0) {
+    countdownTimer = setInterval(update, 200);
+  }
+});
 
 });
 

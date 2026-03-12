@@ -66,6 +66,26 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+let wakeLockSentinel = null;
+
+async function requestWakeLock() {
+  try {
+    if (!("wakeLock" in navigator)) return;
+    wakeLockSentinel = await navigator.wakeLock.request("screen");
+
+    wakeLockSentinel.addEventListener("release", () => {
+      console.log("Wake lock released");
+    });
+  } catch (err) {
+    console.log("Wake lock failed:", err?.message || err);
+  }
+}
+
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState === "visible") {
+    await requestWakeLock();
+  }
+});
 function fmt(ms){
   const total = Math.max(0, Math.ceil(ms / 1000));
   const m = Math.floor(total / 60);
@@ -86,6 +106,8 @@ if (!sessionId) {
   timeEl.textContent = "--:--";
   throw new Error("Missing session id");
 }
+
+requestWakeLock();
 
 let currentEndsAt = 0;
 

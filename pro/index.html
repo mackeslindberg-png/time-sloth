@@ -1680,21 +1680,24 @@ await set(ref(db, `sessions/${sessionId}/status`), {
 
       const statusUrl = `https://mackeslindberg-png.github.io/time-sloth/pro/status.html?s=${sessionId}`;
 
-      console.log("Session skapad:", sessionId);
-      console.log("Status-länk:", statusUrl);
+console.log("Session skapad:", sessionId);
+console.log("Status-länk:", statusUrl);
 
-     document.getElementById("qrOverlay").style.display = "flex";
+// visa overlay
+const overlay = document.getElementById("qrOverlay");
+overlay.style.display = "flex";
 
+// skapa QR
 const qrBox = document.getElementById("qrCode");
 qrBox.innerHTML = "";
 
 new QRCode(qrBox, {
   text: statusUrl,
-  width: 300,
-  height: 300
+  width: 320,
+  height: 320
 });
 
-      return { sessionId, statusUrl, uid };
+return { sessionId, statusUrl, uid };
     }
   };
 </script>

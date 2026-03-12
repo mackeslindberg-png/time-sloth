@@ -287,8 +287,12 @@
       right: 10px;
       z-index: 1200;
       display:none;
+      gap:8px;
     }
-    body.run .fsFloat{ display:block; }
+    body.run .fsFloat{
+      display:flex;
+      align-items:center;
+    }
     .fsFloat button{
       min-height: 44px;
       padding: 10px 12px;
@@ -449,31 +453,64 @@
       100%{ transform: translate(-40px,-50%) scale(1.6); opacity: 0; }
     }
   </style>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 
 <body>
-<div id="qrOverlay" style="
-position:fixed;
-inset:0;
-background:rgba(0,0,0,0.85);
-display:none;
-align-items:center;
-justify-content:center;
-z-index:9999;
-flex-direction:column;
-gap:20px;
-color:white;
-font-family:sans-serif;
-">
+  <div id="qrOverlay" style="
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+    flex-direction:column;
+    gap:16px;
+    color:white;
+    font-family:sans-serif;
+    padding:20px;
+    text-align:center;
+  ">
+    <div style="font-weight:900;font-size:22px;">Live QR</div>
 
-<div id="qrCode"></div>
+    <div id="qrCode" style="
+      background:#fff;
+      padding:14px;
+      border-radius:16px;
+      display:inline-block;
+    "></div>
 
-<button onclick="document.getElementById('qrOverlay').style.display='none';">
-Stäng
-</button>
+    <div id="qrText" style="
+      max-width:90vw;
+      word-break:break-word;
+      font-size:14px;
+      opacity:.9;
+    "></div>
 
-</div>
+    <button
+      type="button"
+      onclick="
+        document.getElementById('qrOverlay').style.display='none';
+        document.getElementById('qrCode').innerHTML='';
+        document.getElementById('qrText').textContent='';
+      "
+      style="
+        min-height:48px;
+        padding:12px 18px;
+        border-radius:14px;
+        border:1px solid rgba(255,255,255,.22);
+        background:rgba(255,255,255,.12);
+        color:#fff;
+        font-weight:900;
+        cursor:pointer;
+      "
+    >
+      Stäng
+    </button>
+  </div>
+
   <div class="splash" id="splash">
     <img src="../logo.png" class="splashLogo" alt="time/sloth logo">
     <div class="splashText">time/sloth PRO</div>
@@ -481,13 +518,10 @@ Stäng
     <button class="splashBtn primary" id="enterBtn">Enter</button>
   </div>
 
- <div class="fsFloat">
-  <button id="fsBtnRun" title="Fullscreen">Fullscreen</button>
-
-  <button onclick="timeSlothLive.startTestSession()">
-    Live QR
-  </button>
-</div>
+  <div class="fsFloat">
+    <button id="fsBtnRun" title="Fullscreen">Fullscreen</button>
+    <button type="button" onclick="timeSlothLive.startTestSession()">Live QR</button>
+  </div>
 
   <div class="runControls" id="runControls">
     <button id="skipRun">Skip</button>
@@ -502,12 +536,11 @@ Stäng
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <button id="fsBtn" style="min-height:44px;padding:10px 12px;border-radius:14px;font-size:calc(14px * var(--scale));">Fullscreen</button>
-        <button onclick="startLive()">Live QR</button>
+        <button type="button" onclick="timeSlothLive.startTestSession()">Live QR</button>
         <div class="small" id="status">Ready</div>
       </div>
     </div>
 
-    <!-- Profiles -->
     <div class="panel">
       <div class="row">
         <div class="small"><b>Profile</b></div>
@@ -531,7 +564,6 @@ Stäng
       <div class="toast" id="profileToast"></div>
     </div>
 
-    <!-- Groups + time -->
     <div class="panel">
       <div class="row">
         <div class="small"><b>Groups</b> (order below)</div>
@@ -559,7 +591,6 @@ Stäng
       <div class="hint">Weight styr hur ofta en grupp dyker upp i rotationen. Varje grupp kan även ha egen slot-tid.</div>
     </div>
 
-    <!-- Warnings -->
     <div class="panel">
       <div class="row">
         <div class="small"><b>Warnings</b></div>
@@ -568,16 +599,13 @@ Stäng
       <div class="grid cols2" style="margin-top:10px;">
         <div class="chip"><label><input type="checkbox" id="w600"> 10 min warning</label></div>
         <div class="chip"><label><input type="checkbox" id="w300"> 5 min warning</label></div>
-
         <div class="chip"><label><input type="checkbox" id="w60" checked> 60s warning</label></div>
         <div class="chip"><label><input type="checkbox" id="w30" checked> 30s warning</label></div>
-
         <div class="chip"><label><input type="checkbox" id="w10" checked> 10s countdown</label></div>
         <div class="chip"><label><input type="checkbox" id="softStart" checked> Soft start (3..2..1)</label></div>
       </div>
     </div>
 
-    <!-- Group settings -->
     <div class="panel" id="settingsPanel">
       <div class="row">
         <div class="small"><b>Group settings</b></div>
@@ -586,7 +614,6 @@ Stäng
       <div class="grid" style="margin-top:10px; gap:10px;" id="modeSettings"></div>
     </div>
 
-    <!-- Stage -->
     <div class="stage" id="stage">
       <img src="../logo.png" class="stageLogo" alt="time/sloth logo">
       <div class="badge" id="badge">IDLE</div>
@@ -711,10 +738,7 @@ Stäng
     let activeId = store.activeId;
     let profile = store.profiles[activeId] || DEFAULT_PROFILE();
 
-    // Default (profile) duration – can be overridden per group
     let defaultIntervalMin = clampInt(profile.durationMin, 2, 60);
-
-    // Current slot duration (changes per group)
     let slotIntervalMin = defaultIntervalMin;
     let durationMs = slotIntervalMin * 60 * 1000;
 
@@ -734,7 +758,6 @@ Stäng
 
     let inCountdown = false;
 
-    // Wake Lock
     let wakeLock = null;
     async function requestWakeLock(){
       try{
@@ -752,7 +775,6 @@ Stäng
     function setToast(msg){ toastEl.textContent = msg || ""; }
     function setProfileToast(msg){ profileToastEl.textContent = msg || ""; }
 
-    // --- TTS queue: no overlap ---
     function pickEnglishVoice(){
       const voices = speechSynthesis.getVoices?.() || [];
       return voices.find(v => /en-US/i.test(v.lang)) ||
@@ -1044,7 +1066,6 @@ Stäng
       const currentKey = rotation[idx];
       const nextKey = getNextKey();
 
-      // Slot duration from group override or profile default
       slotIntervalMin = getSlotMinFor(currentKey);
       durationMs = slotIntervalMin * 60 * 1000;
 
@@ -1078,13 +1099,11 @@ Stäng
       setCarProgress(now);
 
       if (remaining > 0){
-        // 10 min warning
         if (profile.warnings.s600 && !warned600 && remaining <= 600*1000 && durationMs >= 600*1000){
           warned600 = true;
           speakQueued("Ten minutes left");
         }
 
-        // 5 min warning
         if (profile.warnings.s300 && !warned300 && remaining <= 300*1000 && durationMs >= 300*1000){
           warned300 = true;
           speakQueued("Five minutes left");
@@ -1256,7 +1275,6 @@ Stäng
         base.modes[k] = { ...base.modes[k], ...((p.modes||{})[k] || {}) };
         base.modes[k].label = String(base.modes[k].label || k).slice(0,20) || k;
 
-        // default: voice follows label
         const incomingVoice = String(base.modes[k].voice ?? "").trim();
         base.modes[k].voice = (incomingVoice.length ? incomingVoice : base.modes[k].label).slice(0,60);
 
@@ -1266,7 +1284,6 @@ Stäng
         base.modes[k].c1 = String(base.modes[k].c1 || "#000000");
         base.modes[k].c2 = String(base.modes[k].c2 || "#000000");
 
-        // slotMin: allow blank, else clamp 1..60
         const sm = String(base.modes[k].slotMin ?? "").trim();
         if (sm === ""){
           base.modes[k].slotMin = "";
@@ -1415,7 +1432,6 @@ Stäng
                 if (voiceInput) voiceInput.value = m.voice;
               }
             } else if (field === "voice"){
-              // if user clears voice => follow label
               const v = String(inp.value || "").trim().slice(0, 60);
               m.voice = v.length ? v : (m.label || k);
             } else if (field === "slotMin"){
@@ -1499,13 +1515,7 @@ Stäng
         }
       } catch(e){}
     }
-    window.startLive = async function () {
-  const res = await timeSlothLive.startTestSession();
-  const qrLink = res.statusUrl;
-  alert(qrLink);
-};
 
-    // Events
     customMin.oninput = () => setDefaultDurationMinutes(customMin.value);
 
     w600.onchange = () => { profile.warnings.s600 = !!w600.checked; saveActiveProfile(); };
@@ -1613,7 +1623,6 @@ Stäng
       hideSplash();
     };
 
-    // Init
     rebuildProfileSelect();
 
     w600.checked = !!profile.warnings.s600;
@@ -1631,75 +1640,87 @@ Stäng
     buildModeSettings();
     refreshIdleView();
   </script>
+
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAcCRjtWpBEptwnlouaA4khMFHcDm7BjrE",
-    authDomain: "time-sloth-live.firebaseapp.com",
-    databaseURL: "https://time-sloth-live-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "time-sloth-live",
-    storageBucket: "time-sloth-live.firebasestorage.app",
-    messagingSenderId: "1011472987100",
-    appId: "1:1011472987100:web:483c2dac92f8158df59519"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyAcCRjtWpBEptwnlouaA4khMFHcDm7BjrE",
+      authDomain: "time-sloth-live.firebaseapp.com",
+      databaseURL: "https://time-sloth-live-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "time-sloth-live",
+      storageBucket: "time-sloth-live.firebasestorage.app",
+      messagingSenderId: "1011472987100",
+      appId: "1:1011472987100:web:483c2dac92f8158df59519"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
 
-  function makeSessionId() {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const rand = Math.random().toString(36).slice(2, 8);
-    return `ts-${y}${m}${day}-${rand}`;
-  }
-
-  window.timeSlothLive = {
-    async startTestSession() {
-      await signInAnonymously(auth);
-
-      const uid = auth.currentUser.uid;
-      const sessionId = makeSessionId();
-
-await set(ref(db, `sessions/${sessionId}`), {
-  ownerUid: uid,
-  createdAt: Date.now()
-});
-
-await set(ref(db, `sessions/${sessionId}/status`), {
-  modeName: "LIVE TEST",
-  phase: "running",
-  endsAt: Date.now() + 5 * 60 * 1000,
-  updatedAt: Date.now()
-});
-
-      const statusUrl = `https://mackeslindberg-png.github.io/time-sloth/pro/status.html?s=${sessionId}`;
-
-console.log("Session skapad:", sessionId);
-console.log("Status-länk:", statusUrl);
-
-// visa overlay
-const overlay = document.getElementById("qrOverlay");
-overlay.style.display = "flex";
-
-// skapa QR
-const qrBox = document.getElementById("qrCode");
-qrBox.innerHTML = "";
-
-new QRCode(qrBox, {
-  text: statusUrl,
-  width: 320,
-  height: 320
-});
-
-return { sessionId, statusUrl, uid };
+    function makeSessionId() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const rand = Math.random().toString(36).slice(2, 8);
+      return `ts-${y}${m}${day}-${rand}`;
     }
-  };
-</script>
+
+    function showQrOverlay(statusUrl) {
+      const overlay = document.getElementById("qrOverlay");
+      const qrBox = document.getElementById("qrCode");
+      const qrText = document.getElementById("qrText");
+
+      qrBox.innerHTML = "";
+      qrText.textContent = statusUrl;
+
+      new QRCode(qrBox, {
+        text: statusUrl,
+        width: 320,
+        height: 320
+      });
+
+      overlay.style.display = "flex";
+    }
+
+    window.timeSlothLive = {
+      async startTestSession() {
+        try {
+          await signInAnonymously(auth);
+
+          const uid = auth.currentUser.uid;
+          const sessionId = makeSessionId();
+
+          await set(ref(db, `sessions/${sessionId}`), {
+            ownerUid: uid,
+            createdAt: Date.now()
+          });
+
+          await set(ref(db, `sessions/${sessionId}/status`), {
+            modeName: "LIVE TEST",
+            phase: "running",
+            endsAt: Date.now() + 5 * 60 * 1000,
+            updatedAt: Date.now()
+          });
+
+          const statusUrl = `https://mackeslindberg-png.github.io/time-sloth/pro/status.html?s=${sessionId}`;
+
+          console.log("Session skapad:", sessionId);
+          console.log("Status-länk:", statusUrl);
+
+          showQrOverlay(statusUrl);
+
+          return { sessionId, statusUrl, uid };
+        } catch (err) {
+          console.error("Live QR error:", err);
+          alert("Kunde inte skapa live-session.");
+          throw err;
+        }
+      }
+    };
+  </script>
 </body>
 </html>

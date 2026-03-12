@@ -1732,15 +1732,16 @@ function showQrOverlay(statusUrl) {
           showQrOverlay(statusUrl);
 
           return { sessionId, statusUrl, uid };
-      } catch (err) {
-  console.error("Live QR error:", err);
-  alert("Live QR error:\n\n" + (err?.message || String(err)));
-  throw err;
-}
-      }
-    };
-  </script>
-  <div id="liveQrPanel" style="
+    } catch (err) {
+      console.error("Live QR error:", err);
+      alert("Live QR error:\n\n" + (err?.message || String(err)));
+      throw err;
+    }
+  }
+};
+</script>
+
+<div id="liveQrPanel" style="
 position:fixed;
 bottom:12px;
 right:12px;
@@ -1764,5 +1765,6 @@ scan
 </div>
 
 </div>
+
 </body>
 </html>

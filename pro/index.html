@@ -454,7 +454,6 @@
     }
   </style>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 window.QRCodeReady = true;
 </script>
@@ -1672,22 +1671,26 @@ window.QRCodeReady = true;
       return `ts-${y}${m}${day}-${rand}`;
     }
 
-    function showQrOverlay(statusUrl) {
-      const overlay = document.getElementById("qrOverlay");
-      const qrBox = document.getElementById("qrCode");
-      const qrText = document.getElementById("qrText");
+function showQrOverlay(statusUrl) {
+  const overlay = document.getElementById("qrOverlay");
+  const qrBox = document.getElementById("qrCode");
+  const qrText = document.getElementById("qrText");
 
-      qrBox.innerHTML = "";
-      qrText.textContent = statusUrl;
+  const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(statusUrl)}`;
 
-      new QRCode(qrBox, {
-        text: statusUrl,
-        width: 320,
-        height: 320
-      });
+  qrBox.innerHTML = `
+    <img
+      src="${qrImgUrl}"
+      alt="QR code"
+      width="320"
+      height="320"
+      style="display:block;border-radius:12px;"
+    >
+  `;
 
-      overlay.style.display = "flex";
-    }
+  qrText.textContent = statusUrl;
+  overlay.style.display = "flex";
+}
 
     window.timeSlothLive = {
       async startTestSession() {

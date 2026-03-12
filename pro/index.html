@@ -1032,19 +1032,24 @@ window.QRCodeReady = true;
       warned600 = warned300 = warned60 = warned30 = warned10 = false;
       setBlink(false);
 
-      slotStartedAt = Date.now();
-      slotEndsAt = slotStartedAt + durationMs;
+     slotStartedAt = Date.now();
+slotEndsAt = slotStartedAt + durationMs;
 
-      tick();
-      tickTimer = setInterval(tick, 80);
+updateLiveStatus({ endsAt: slotEndsAt, phase: badge.textContent || "RUNNING" });
+
+tick();
+tickTimer = setInterval(tick, 80);
     }
 
     async function doSoftStartThenRun(currentKey){
-      inCountdown = true;
-      badge.textContent = "GET READY";
-      subEl.textContent = "Soft start";
-      resetCar();
-      startCarEffects();
+    inCountdown = true;
+badge.textContent = "GET READY";
+subEl.textContent = "Soft start";
+
+updateLiveStatus({ phase: "GET READY", endsAt: 0 });
+
+resetCar();
+startCarEffects();
 
       await speakQueued(`${voiceTextFor(currentKey)}, ${slotIntervalMin} minutes`);
       await sleep(150);
@@ -1077,8 +1082,10 @@ window.QRCodeReady = true;
       statusEl.textContent = `Running: ${labelFor(currentKey)}`;
 
       modeEl.textContent = labelFor(currentKey);
-      nextEl.textContent = `NEXT UP: ${labelFor(nextKey)}`;
-      subEl.textContent = `${slotIntervalMin} min slot`;
+nextEl.textContent = `NEXT UP: ${labelFor(nextKey)}`;
+subEl.textContent = `${slotIntervalMin} min slot`;
+
+updateLiveStatus();
 
       resetCar();
       startCarEffects();
@@ -1180,9 +1187,11 @@ window.QRCodeReady = true;
       clearCountdown();
       cancelSpeech();
 
-      badge.textContent = "STOPPED";
-      statusEl.textContent = "Stopped";
-      setBlink(false);
+    badge.textContent = "STOPPED";
+statusEl.textContent = "Stopped";
+setBlink(false);
+
+updateLiveStatus({ phase: "STOPPED", endsAt: 0 });
 
       stopCarEffects();
       resetCar();
@@ -1661,9 +1670,24 @@ refreshIdleView();
       appId: "1:1011472987100:web:483c2dac92f8158df59519"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
+   const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let liveSessionId = null;
+
+async function updateLiveStatus(patch = {}) {
+  if (!liveSessionId) return;
+
+  await set(ref(db, `sessions/${liveSessionId}/status`), {
+    modeName: modeEl.textContent || "LIVE",
+    nextName: nextEl.textContent || "",
+    phase: badge.textContent || "RUNNING",
+    endsAt: slotEndsAt || 0,
+    updatedAt: Date.now(),
+    ...patch
+  });
+}
 
     function makeSessionId() {
       const d = new Date();
@@ -1710,7 +1734,8 @@ function showQrOverlay(statusUrl) {
           await signInAnonymously(auth);
 
           const uid = auth.currentUser.uid;
-          const sessionId = makeSessionId();
+         const sessionId = makeSessionId();
+liveSessionId = sessionId;
 
        await set(ref(db, `sessions/${sessionId}/status`), {
   modeName: modeEl.textContent || "LIVE",
